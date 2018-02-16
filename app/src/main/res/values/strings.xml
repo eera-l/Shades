@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Shades</string>
+    <string name="button_capture">Capture</string>
 </resources>
