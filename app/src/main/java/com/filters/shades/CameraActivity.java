@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.graphics.Path;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -29,8 +31,10 @@ public class CameraActivity extends Activity {
 
     private Camera mCamera;
     private CameraPreview mPreview;
-    private Button mButton;
+    private Button mButtonCapture;
+    private Button mButtonUpload;
     public static final int MEDIA_TYPE_IMAGE = 1;
+    public static final int GET_FROM_GALLERY = 2;
     private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
@@ -44,7 +48,7 @@ public class CameraActivity extends Activity {
                 FileOutputStream fileOutputStream = new FileOutputStream(pictureFile);
                 fileOutputStream.write(data);
                 fileOutputStream.close();
-                Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath());
+                Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), false);
                 startActivity(intent);
             } catch (FileNotFoundException fe) {
                 Log.d(TAG, "File not found: " + fe.getMessage());
@@ -91,12 +95,21 @@ public class CameraActivity extends Activity {
         preview.addView(mPreview);
 
 
-        mButton = (Button)findViewById(R.id.button_capture);
-        mButton.setOnClickListener(new View.OnClickListener() {
+        mButtonCapture = (Button)findViewById(R.id.button_capture);
+        mButtonCapture.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 mCamera.takePicture(null, null, mPicture);
+            }
+        });
+
+        mButtonUpload = (Button)findViewById(R.id.button_upload);
+        mButtonUpload.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
             }
         });
     }
@@ -124,5 +137,16 @@ public class CameraActivity extends Activity {
         }
 
         return mediaFile;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
+            Uri pictureFile = data.getData();
+            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.toString(), true);
+            startActivity(intent);
+        }
     }
 }
