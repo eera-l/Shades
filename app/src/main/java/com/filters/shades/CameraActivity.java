@@ -1,10 +1,13 @@
 package com.filters.shades;
 
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,6 +20,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import static android.content.ContentValues.TAG;
 import static com.filters.shades.CameraPreview.getCameraInstance;
@@ -41,13 +45,25 @@ public class CameraActivity extends Activity {
                 fileOutputStream.write(data);
                 fileOutputStream.close();
                 Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath());
-
                 startActivity(intent);
             } catch (FileNotFoundException fe) {
                 Log.d(TAG, "File not found: " + fe.getMessage());
             } catch (IOException ioe) {
                 Log.d(TAG, "Error accessing file: " + ioe.getMessage());
             }
+
+            //add metadata to pictures so that they are automatically displayed
+            //on the phone's gallery
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Images.Media.TITLE, pictureFile.getName());
+            values.put(MediaStore.Images.Media.DESCRIPTION, R.string.pictures_description);
+            values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis ());
+            values.put(MediaStore.Images.ImageColumns.BUCKET_ID, pictureFile.toString().toLowerCase(Locale.US).hashCode());
+            values.put(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME, pictureFile.getName().toLowerCase(Locale.US));
+            values.put("_data", pictureFile.getAbsolutePath());
+
+            ContentResolver cr = getContentResolver();
+            cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
         }
     };
 
@@ -87,7 +103,7 @@ public class CameraActivity extends Activity {
 
     private static File getOutputMediaFile(int type) {
 
-        //Get folder on phone's gallery
+        //Get folder on phone's storage
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Shades");
 
         //Create folder if it does not exist

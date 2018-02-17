@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Shades</string>
     <string name="button_capture">Capture</string>
+    <string name="pictures_description">Picture taken with the Shades app.</string>
 </resources>
