@@ -2,9 +2,7 @@ package com.filters.shades;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.ImageFormat;
 import android.hardware.Camera;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
