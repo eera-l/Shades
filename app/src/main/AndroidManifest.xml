@@ -2,15 +2,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.filters.shades">
 
+    <uses-feature android:name="android.hardware.Camera" />
+    <uses-feature android:name="android.hardware.Camera.autofocus" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:largeHeap="true"
         android:theme="@style/AppTheme">
-
-
         <activity
             android:name=".CameraActivity"
             android:screenOrientation="portrait">
@@ -20,12 +25,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".HomepageActivity"></activity>
+        <activity android:name=".HomepageActivity" android:screenOrientation="portrait" />
     </application>
-    <uses-feature android:name="android.hardware.Camera" />
-    <uses-feature android:name="android.hardware.Camera.autofocus" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-
 
 </manifest>

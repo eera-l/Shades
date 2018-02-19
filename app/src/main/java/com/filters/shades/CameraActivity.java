@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Path;
 import android.hardware.Camera;
 import android.net.Uri;
@@ -20,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -27,6 +29,7 @@ import java.util.Locale;
 import static android.content.ContentValues.TAG;
 import static com.filters.shades.CameraPreview.getCameraInstance;
 
+@SuppressWarnings("deprecation")
 public class CameraActivity extends Activity {
 
     private Camera mCamera;
@@ -149,4 +152,5 @@ public class CameraActivity extends Activity {
             startActivity(intent);
         }
     }
+
 }

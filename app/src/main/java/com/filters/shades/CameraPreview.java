@@ -16,6 +16,7 @@ import static android.content.ContentValues.TAG;
  * Created by Federica on 16/02/2018.
  */
 
+@SuppressWarnings("deprecation")
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 
 
@@ -39,9 +40,20 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         Camera camera = null;
 
         try {
-            camera = Camera.open(1                                                                                                                                                                                                                                 );
+            int numberOfCameras = Camera.getNumberOfCameras();
+            int cameraId = -1;
+            for (int i = 0; i < numberOfCameras; i++) {
+                Camera.CameraInfo info = new Camera.CameraInfo();
+                Camera.getCameraInfo(i, info);
+                if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                    Log.d(TAG, "Camera found");
+                    cameraId = i;
+                    break;
+                }
+            }
+            camera = Camera.open(cameraId);
         } catch (RuntimeException re) { //camera not available
-            Toast.makeText(context, "Oops! It looks like another app is using the camera.", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Oops! It looks like another app is using the camera.");
         }
 
         return camera;
