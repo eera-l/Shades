@@ -5,9 +5,13 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Path;
 import android.hardware.Camera;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -56,6 +60,30 @@ public class CameraActivity extends Activity {
                 FileOutputStream fileOutputStream = new FileOutputStream(pictureFile);
                 fileOutputStream.write(data);
                 fileOutputStream.close();
+                String file = pictureFile.getPath();
+                BitmapFactory.Options bounds = new BitmapFactory.Options();
+                bounds.inJustDecodeBounds = true;
+                BitmapFactory.decodeFile(file, bounds);
+
+                BitmapFactory.Options opts = new BitmapFactory.Options();
+                Bitmap bm = BitmapFactory.decodeFile(file, opts);
+                ExifInterface exif = null;
+                try {
+                    exif = new ExifInterface(file);
+                } catch (IOException ioe) {
+                    Log.d(TAG, "" + ioe);
+                }
+                String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+                int orientation = orientString != null ? Integer.parseInt(orientString) :  ExifInterface.ORIENTATION_NORMAL;
+
+                int rotationAngle = 0;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
+
+                Matrix matrix = new Matrix();
+                matrix.setRotate(rotationAngle, (float) bm.getWidth() / 2, (float) bm.getHeight() / 2);
+                Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, bounds.outWidth, bounds.outHeight, matrix, true);
                 Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), 0);
                 startActivity(intent);
             } catch (FileNotFoundException fe) {
@@ -148,6 +176,8 @@ public class CameraActivity extends Activity {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         File mediaFile;
         if (type == MEDIA_TYPE_IMAGE) {
+
+
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
         } else {
             return null;
