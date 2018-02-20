@@ -5,12 +5,16 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.graphics.Path;
 import android.hardware.Camera;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.CardView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -38,6 +42,7 @@ public class CameraActivity extends Activity {
     private Button mButtonUpload;
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int GET_FROM_GALLERY = 2;
+    private CardView mCardView;
     private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
@@ -51,7 +56,7 @@ public class CameraActivity extends Activity {
                 FileOutputStream fileOutputStream = new FileOutputStream(pictureFile);
                 fileOutputStream.write(data);
                 fileOutputStream.close();
-                Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), false);
+                Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), 0);
                 startActivity(intent);
             } catch (FileNotFoundException fe) {
                 Log.d(TAG, "File not found: " + fe.getMessage());
@@ -115,6 +120,15 @@ public class CameraActivity extends Activity {
                 startActivityForResult(new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
             }
         });
+
+        mCardView = (CardView)findViewById(R.id.card_view_pictures);
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            mCardView.getBackground().setAlpha(0);
+        }
+        else {
+            mCardView.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent));
+        }
+        mCardView.setCardElevation(0);
     }
 
     private static File getOutputMediaFile(int type) {
@@ -148,7 +162,7 @@ public class CameraActivity extends Activity {
 
         if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
             Uri pictureFile = data.getData();
-            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.toString(), true);
+            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.toString(), 1);
             startActivity(intent);
         }
     }

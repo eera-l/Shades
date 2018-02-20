@@ -21,7 +21,7 @@ public class HomepageActivity extends AppCompatActivity {
     public static final String EXTRA_ORIGIN = "com.filters.shades.origin";
     public static final String TAG = "com.filters.shades";
 
-    public static Intent newIntent(Context packageContext, String picturePath, boolean uploaded) {
+    public static Intent newIntent(Context packageContext, String picturePath, int uploaded) {
 
         Intent intent = new Intent(packageContext, HomepageActivity.class);
         intent.putExtra(EXTRA_PICTURE, picturePath);
@@ -37,14 +37,16 @@ public class HomepageActivity extends AppCompatActivity {
         mPictureView = (ImageView)findViewById(R.id.image_view_picture);
         String pictureToShowPath = getIntent().getStringExtra(EXTRA_PICTURE);
         Uri selectedImage = Uri.parse(pictureToShowPath);
-        boolean up = getIntent().getBooleanExtra(EXTRA_ORIGIN, false);
+        int up = getIntent().getIntExtra(EXTRA_ORIGIN, 0);
         Bitmap bitmap;
         try {
-            if (!up) {
+            if (up == 0) {
                 bitmap = BitmapFactory.decodeFile(selectedImage.getPath());
                 bitmap = flipBitmapHorizontally(bitmap);
-            } else {
+            } else if (up == 1) {
                 bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+            } else {
+                bitmap = BitmapFactory.decodeFile(selectedImage.getPath());
             }
             mPictureView.setImageBitmap(bitmap);
         } catch (Exception ioe) {

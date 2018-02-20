@@ -1,5 +1,8 @@
 package com.filters.shades;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -24,17 +27,19 @@ import static com.filters.shades.HomepageActivity.TAG;
 class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
 
     private List<Picture> mPictures;
+    private Context mContext;
 
-    public MainAdapter(PictureList mPicturePaths) {
+    public MainAdapter(PictureList mPicturePaths, Context context) {
         mPictures = new ArrayList<>();
         mPictures = mPicturePaths.getPictures();
+        mContext = context;
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_picture, parent, false);
 
-        ViewHolder viewHolder = new ViewHolder(v);
+        ViewHolder viewHolder = new ViewHolder(v, mContext);
         return viewHolder;
     }
 
@@ -51,6 +56,7 @@ class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         holder.mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         holder.mImageView.setCropToPadding(true);
         holder.mImageView.setAdjustViewBounds(true);
+        holder.mPicture = mPictures.get(position);
     }
 
     private Bitmap scaleBitmapKeepingRatio(Bitmap bitmap, int destWidth, int destHeight) {
@@ -83,19 +89,32 @@ class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         return background;
     }
 
+
     @Override
     public int getItemCount() {
         return mPictures.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder{
 
         public ImageView mImageView;
+        public Picture mPicture;
+        private Context mContext;
 
-        public ViewHolder(View itemView) {
+
+        public ViewHolder(View itemView, Context context) {
             super(itemView);
+            mContext = context;
             mImageView = (ImageView)itemView.findViewById(R.id.picture_thumbnail);
+            mImageView.setOnClickListener(new View.OnClickListener() {
 
+                @Override
+                public void onClick(View v) {
+                    Intent intent =  HomepageActivity.newIntent(mContext, mPicture.getPictureUri().toString(), 2);
+                    mContext.startActivity(intent);
+                }
+            });
         }
+
     }
 }

@@ -53,16 +53,11 @@ public class PictureList {
         List<String> picturePaths = getCameraImages(context);
 
         for (int i = picturePaths.size() - 1; i > picturePaths.size() - 16; i--) {
-            /*Cursor cursor = MediaStore.Images.Thumbnails.queryMiniThumbnails(
-                    context.getContentResolver(), Uri.parse(picturePaths.get(i)),
-                    MediaStore.Images.Thumbnails.MINI_KIND,
-                    null );
-            if( cursor != null && cursor.getCount() > 0 ) {
-                cursor.moveToFirst();//**EDIT**
-                String uri = cursor.getString( cursor.getColumnIndex( MediaStore.Images.Thumbnails.DATA ) );*/
+
+            if (picturePaths.get(i) != null) {
                 Picture picture = new Picture(Uri.parse(picturePaths.get(i)));
                 mPictures.add(picture);
-            //}
+            }
 
         }
     }
