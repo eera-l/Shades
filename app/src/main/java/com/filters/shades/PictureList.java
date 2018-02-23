@@ -23,9 +23,11 @@ public class PictureList {
     public static final String CAMERA_IMAGE_BUCKET_ID =
             getBucketId(CAMERA_IMAGE_BUCKET_NAME);
 
-    public PictureList(Context context) {
-
+    public PictureList() {
         mPictures = new ArrayList<>();
+    }
+
+    public void initialize(Context context) {
         List<String> picturePaths = getCameraImages(context);
         int length = picturePaths.size();
         int end;
@@ -46,6 +48,10 @@ public class PictureList {
     }
     public static String getBucketId(String path) {
         return String.valueOf(path.toLowerCase().hashCode());
+    }
+
+    public void setmPictures(List<Picture> mPictures) {
+        this.mPictures = mPictures;
     }
 
     public static List<String> getCameraImages(Context context) {

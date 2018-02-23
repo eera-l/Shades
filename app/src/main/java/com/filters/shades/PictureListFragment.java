@@ -26,7 +26,8 @@ public class PictureListFragment extends Fragment {
         mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.HORIZONTAL, false);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mPicturePaths = new PictureList(getActivity());
+        mPicturePaths = new PictureList();
+        mPicturePaths.initialize(getActivity());
         mAdapter = new MainAdapter(mPicturePaths, getActivity());
         mRecyclerView.setAdapter(mAdapter);
         return view;

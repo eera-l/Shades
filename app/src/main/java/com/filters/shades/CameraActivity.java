@@ -59,7 +59,7 @@ public class CameraActivity extends Activity {
             try {
                 FileOutputStream fileOutputStream = new FileOutputStream(pictureFile);
                 fileOutputStream.write(data);
-                String file = pictureFile.getPath();
+                /*String file = pictureFile.getPath();
                 BitmapFactory.Options bounds = new BitmapFactory.Options();
                 bounds.inJustDecodeBounds = true;
                 BitmapFactory.decodeFile(file, bounds);
@@ -81,11 +81,12 @@ public class CameraActivity extends Activity {
                 if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
 
                 Matrix matrix = new Matrix();
-                matrix.postRotate(rotationAngle, (float) bm.getWidth() / 2, (float) bm.getHeight() / 2);
                 matrix.postScale(-1, 1, (float) bm.getWidth() / 2, (float) bm.getHeight() / 2);
+                //matrix.postRotate(rotationAngle, (float) bm.getWidth() / 2, (float) bm.getHeight() / 2);
+
                 Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, bounds.outWidth, bounds.outHeight, matrix, true);
                 rotatedBitmap.compress(Bitmap.CompressFormat.PNG, 70, fileOutputStream); // bmp is your Bitmap instance
-                // PNG is a lossless format, the compression factor (100) is ignored
+                // PNG is a lossless format, the compression factor (100) is ignored*/
 
                 fileOutputStream.close();
 

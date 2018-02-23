@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Shades</string>
-    <string name="button_capture">Capture</string>
-    <string name="button_upload">Upload</string>
-    <string name="button_from_url">from URL</string>
+    <string name="button_capture">CAPTURE</string>
+    <string name="button_upload">UPLOAD</string>
+    <string name="button_from_url">FROM URL</string>
     <string name="pictures_description">Picture taken with the Shades app.</string>
 </resources>

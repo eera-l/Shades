@@ -1,21 +1,27 @@
 package com.filters.shades;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.util.Log;
+import android.view.Window;
 import android.widget.ImageView;
 
 
 public class HomepageActivity extends AppCompatActivity {
 
     private ImageView mPictureView;
+    private CardView mCardView;
 
     public static final String EXTRA_PICTURE = "com.filters.shades.picture";
     public static final String EXTRA_ORIGIN = "com.filters.shades.origin";
@@ -31,8 +37,11 @@ public class HomepageActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Remove title bar
+        //this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_homepage);
+
 
         mPictureView = (ImageView)findViewById(R.id.image_view_picture);
         String pictureToShowPath = getIntent().getStringExtra(EXTRA_PICTURE);
@@ -53,8 +62,15 @@ public class HomepageActivity extends AppCompatActivity {
             Log.d(TAG, "Error uploading the picture: " + ioe.getMessage());
         }
 
-        Bundle bundle = new Bundle();
-        //bundle.putString();
+        mCardView = (CardView)findViewById(R.id.card_view_filters);
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            mCardView.getBackground().setAlpha(0);
+        }
+        else {
+            mCardView.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent));
+        }
+        mCardView.setCardElevation(0);
+
     }
 
     private Bitmap flipBitmapHorizontally(Bitmap source) {

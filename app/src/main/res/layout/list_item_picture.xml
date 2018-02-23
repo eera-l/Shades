@@ -10,4 +10,5 @@
         android:src="@mipmap/ic_launcher"
         android:background="@drawable/image_view_border"/>
 
+
 </android.support.v7.widget.CardView>

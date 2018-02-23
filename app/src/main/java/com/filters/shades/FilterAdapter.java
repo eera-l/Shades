@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -28,11 +29,14 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     private List<Picture> mPictures;
     private Context mContext;
+    private int mMode;
 
-    public FilterAdapter(PictureList mPicturePaths, Context context) {
+
+    public FilterAdapter(PictureList mPicturePaths, Context context, int mode) {
         mPictures = new ArrayList<>();
         mPictures = mPicturePaths.getPictures();
         mContext = context;
+        mMode = mode;
     }
 
     @Override
@@ -47,12 +51,23 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     public void onBindViewHolder(FilterAdapter.ViewHolder holder, int position) {
         Bitmap bitmap = null;
         try {
-            bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
+            if (mMode == 0) {
+                bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
+                bitmap = flipBitmapHorizontally(bitmap);
+            } else if (mMode == 1) {
+                bitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), mPictures.get(position).getPictureUri());
+            } else {
+                bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
+            }
         } catch (Exception ioe) {
             Log.d(TAG, "Cannot open file: " + ioe.getMessage());
         }
 
-        holder.mImageView.setImageBitmap(scaleBitmapKeepingRatio(bitmap, bitmap.getWidth() / 2, bitmap.getHeight() / 2));
+        if (bitmap.getWidth() >= bitmap.getHeight()) {
+            holder.mImageView.setImageBitmap(scaleBitmapKeepingRatio(bitmap, 200, 150));
+        } else {
+            holder.mImageView.setImageBitmap(scaleBitmapKeepingRatio(bitmap, 150, 200));
+        }
         holder.mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         holder.mImageView.setCropToPadding(true);
         holder.mImageView.setAdjustViewBounds(true);
@@ -67,8 +82,8 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
         //Values (150 and 180) that can be tweaked to adjust padding
         //and zooming of picture thumbnails
-        float scaleX = (float) 150 / originalWidth;
-        float scaleY = (float) 180 / originalHeight;
+        float scaleX = (float) destWidth / originalWidth;
+        float scaleY = (float) destHeight / originalHeight;
 
         float xTranslation = 0.0f;
         float yTranslation = 0.0f;
@@ -118,5 +133,14 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             });
         }
 
+    }
+    private Bitmap flipBitmapHorizontally(Bitmap source) {
+        float centerX = source.getWidth() / 2;
+        float centerY = source.getHeight() / 2;
+
+        Matrix matrix = new Matrix();
+        matrix.postScale(-1, 1, centerX, centerY);
+
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 }
