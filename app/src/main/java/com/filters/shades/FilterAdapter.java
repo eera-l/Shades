@@ -1,6 +1,5 @@
 package com.filters.shades;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -15,36 +14,37 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.filters.shades.HomepageActivity.TAG;
 
 /**
- * Created by Federica on 19/02/2018.
+ * Created by Federica on 20/02/2018.
  */
 
-class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
+public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
 
     private List<Picture> mPictures;
     private Context mContext;
 
-    public MainAdapter(PictureList mPicturePaths, Context context) {
+    public FilterAdapter(PictureList mPicturePaths, Context context) {
         mPictures = new ArrayList<>();
         mPictures = mPicturePaths.getPictures();
         mContext = context;
     }
 
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public FilterAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_picture, parent, false);
 
-        ViewHolder viewHolder = new ViewHolder(v, mContext);
+        FilterAdapter.ViewHolder viewHolder = new FilterAdapter.ViewHolder(v, mContext);
         return viewHolder;
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(FilterAdapter.ViewHolder holder, int position) {
         Bitmap bitmap = null;
         try {
             bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
@@ -52,7 +52,7 @@ class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
             Log.d(TAG, "Cannot open file: " + ioe.getMessage());
         }
 
-        holder.mImageView.setImageBitmap(scaleBitmapKeepingRatio(bitmap, 150, 150));
+        holder.mImageView.setImageBitmap(scaleBitmapKeepingRatio(bitmap, bitmap.getWidth() / 2, bitmap.getHeight() / 2));
         holder.mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         holder.mImageView.setCropToPadding(true);
         holder.mImageView.setAdjustViewBounds(true);

@@ -5,12 +5,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.content.ContentValues.TAG;
 
 /**
  * Created by Federica on 18/02/2018.
@@ -26,39 +24,24 @@ public class PictureList {
             getBucketId(CAMERA_IMAGE_BUCKET_NAME);
 
     public PictureList(Context context) {
-        /*
-        //Array of metadata to check on pictures
-        String[] projection = new String[]{
-                MediaStore.Images.ImageColumns._ID,
-                MediaStore.Images.ImageColumns.DATA,
-                MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME,
-                MediaStore.Images.ImageColumns.DATE_TAKEN,
-                MediaStore.Images.ImageColumns.MIME_TYPE
-        };
-        final Cursor cursor = context.getContentResolver()
-                .query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, null,
-                        null, MediaStore.Images.ImageColumns.DATE_TAKEN + " DESC");
-
-        try {
-            System.out.println(cursor.getString(1));
-            String pictureLocation = cursor.getString(1);
-            Picture picture = new Picture(Uri.parse(pictureLocation));
-            mPictures.add(picture);
-        } catch (NullPointerException ne) {
-
-            Log.d(TAG, "Cannot find picture: " + ne.getMessage());
-        }*/
 
         mPictures = new ArrayList<>();
         List<String> picturePaths = getCameraImages(context);
+        int length = picturePaths.size();
+        int end;
+        if (length >= 15) {
+            end = length - 15;
+        } else {
+            end = 0;
+        }
 
-        for (int i = picturePaths.size() - 1; i > picturePaths.size() - 16; i--) {
-
-            if (picturePaths.get(i) != null) {
-                Picture picture = new Picture(Uri.parse(picturePaths.get(i)));
-                mPictures.add(picture);
+        if (length > 0) {
+            for (int i = picturePaths.size() - 1; i >= end; i--) {
+                if (picturePaths.get(i) != null) {
+                    Picture picture = new Picture(Uri.parse(picturePaths.get(i)));
+                    mPictures.add(picture);
+                }
             }
-
         }
     }
     public static String getBucketId(String path) {

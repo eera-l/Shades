@@ -52,6 +52,9 @@ public class HomepageActivity extends AppCompatActivity {
         } catch (Exception ioe) {
             Log.d(TAG, "Error uploading the picture: " + ioe.getMessage());
         }
+
+        Bundle bundle = new Bundle();
+        //bundle.putString();
     }
 
     private Bitmap flipBitmapHorizontally(Bitmap source) {
