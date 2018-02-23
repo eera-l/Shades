@@ -1,6 +1,7 @@
 package com.filters.shades;
 
 import android.app.Fragment;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -26,15 +27,31 @@ public class PictureListFragment extends Fragment {
         mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.HORIZONTAL, false);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mPicturePaths = new PictureList();
-        mPicturePaths.initialize(getActivity());
-        mAdapter = new MainAdapter(mPicturePaths, getActivity());
-        mRecyclerView.setAdapter(mAdapter);
+        FragmentAsyncTask fragmentAsyncTask = new FragmentAsyncTask();
+        fragmentAsyncTask.doInBackground(new Object[] {null});
+        fragmentAsyncTask.onPostExecute(null);
         return view;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    private class FragmentAsyncTask extends AsyncTask {
+
+        @Override
+        protected Object doInBackground(Object[] params) {
+            mPicturePaths = new PictureList();
+            mPicturePaths.initialize(getActivity());
+            mAdapter = new MainAdapter(mPicturePaths, getActivity());
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Object o) {
+            mRecyclerView.setAdapter(mAdapter);
+        }
     }
 }
