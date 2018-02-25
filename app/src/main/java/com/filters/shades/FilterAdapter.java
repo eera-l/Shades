@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -16,6 +17,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,8 +60,11 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
                 bitmap = flipBitmapHorizontally(bitmap);
             } else if (mMode == 1) {
                 bitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), mPictures.get(position).getPictureUri());
-            } else {
+            } else if (mMode == 2) {
                 bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
+            } else {
+                DownloaderTask downloaderTask = new DownloaderTask();
+                bitmap = (Bitmap)downloaderTask.doInBackground(new Object[] {position});
             }
         } catch (Exception ioe) {
             Log.d(TAG, "Cannot open file: " + ioe.getMessage());
@@ -142,5 +149,22 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         matrix.postScale(-1, 1, centerX, centerY);
 
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    private class DownloaderTask extends AsyncTask {
+
+        @Override
+        protected Object doInBackground(Object[] params) {
+            Bitmap bitmap = null;
+            try {
+                URL url = new URL(mPictures.get((int) params[0]).getPictureUri().toString());
+                bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+            } catch (MalformedURLException me) {
+                Log.e(TAG, "Malformed URL exception: " + me.getMessage());
+            } catch (IOException ioe) {
+                Log.e(TAG, "IOException: " + ioe.getMessage());
+            }
+            return bitmap;
+        }
     }
 }

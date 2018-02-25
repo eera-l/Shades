@@ -24,6 +24,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -44,8 +48,10 @@ public class CameraActivity extends Activity {
     private CameraPreview mPreview;
     private Button mButtonCapture;
     private Button mButtonUpload;
+    private Button mButtonFromURL;
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int GET_FROM_GALLERY = 2;
+    public static final String DIALOG_NAME = "com.filters.shades.URLDialogFragment";
     private CardView mCardView;
     private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
         @Override
@@ -155,6 +161,15 @@ public class CameraActivity extends Activity {
             }
         });
 
+        mButtonFromURL = (Button)findViewById(R.id.button_from_url);
+        mButtonFromURL.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                URLDialogFragment urlDialogFragment = new URLDialogFragment();
+                urlDialogFragment.show(getFragmentManager(), DIALOG_NAME);
+            }
+        });
+
         mCardView = (CardView)findViewById(R.id.card_view_pictures);
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             mCardView.getBackground().setAlpha(0);
@@ -183,7 +198,6 @@ public class CameraActivity extends Activity {
         File mediaFile;
         if (type == MEDIA_TYPE_IMAGE) {
 
-
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
         } else {
             return null;
@@ -203,4 +217,50 @@ public class CameraActivity extends Activity {
         }
     }
 
+    public void onUserSelectValue(String value) {
+        Glide
+                .with(this)
+                .load(value)
+                .asBitmap()
+                .into(new SimpleTarget<Bitmap>(800,800) {
+                    @Override
+                    public void onResourceReady(Bitmap resource, GlideAnimation glideAnimation) {
+                        //Get folder on phone's storage
+                        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Shades");
+
+                        //Create folder if it does not exist
+                        if (!mediaStorageDir.exists()) {
+                            if (!mediaStorageDir.mkdirs()) {
+                                Log.d("Shades", "Failed to create directory");
+                            }
+                        }
+                        //Save picture to file in the chosen folder
+                        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                        File mediaFile;
+                        mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
+                        try {
+                            FileOutputStream fileOutputStream = new FileOutputStream(mediaFile);
+                            resource.compress(Bitmap.CompressFormat.PNG, 70, fileOutputStream);
+                            fileOutputStream.close();
+
+                                //add metadata to pictures so that they are automatically displayed
+                                //on the phone's gallery
+                                ContentValues values = new ContentValues();
+                                values.put(MediaStore.Images.Media.TITLE, mediaFile.getName());
+                                values.put(MediaStore.Images.Media.DESCRIPTION, R.string.pictures_description);
+                                values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis ());
+                                values.put(MediaStore.Images.ImageColumns.BUCKET_ID, mediaFile.toString().toLowerCase(Locale.US).hashCode());
+                                values.put(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME, mediaFile.getName().toLowerCase(Locale.US));
+                                values.put("_data", mediaFile.getAbsolutePath());
+
+                                ContentResolver cr = getContentResolver();
+                                cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                                Intent intent = HomepageActivity.newIntent(getApplicationContext(), mediaFile.getPath(), 2);
+                                startActivity(intent);
+                        } catch (IOException ioe) {
+
+                        }
+                    }
+                });
+    }
 }

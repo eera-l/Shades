@@ -4,4 +4,7 @@
     <string name="button_upload">UPLOAD</string>
     <string name="button_from_url">FROM URL</string>
     <string name="pictures_description">Picture taken with the Shades app.</string>
+    <string name="url_dialog">Enter URL:</string>
+    <string name="positive_dialog">OK</string>
+    <string name="negative_dialog">Cancel</string>
 </resources>
