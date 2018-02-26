@@ -15,8 +15,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-
-
+import android.widget.TextView;
+import com.zomato.photofilters.FilterPack;
+import com.zomato.photofilters.imageprocessors.Filter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,10 +32,14 @@ import static com.filters.shades.HomepageActivity.TAG;
 
 public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
 
+    static
+    {
+        System.loadLibrary("NativeImageProcessor");
+    }
+
     private List<Picture> mPictures;
     private Context mContext;
     private int mMode;
-
 
     public FilterAdapter(PictureList mPicturePaths, Context context, int mode) {
         mPictures = new ArrayList<>();
@@ -45,7 +50,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     @Override
     public FilterAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_picture, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_filter, parent, false);
 
         FilterAdapter.ViewHolder viewHolder = new FilterAdapter.ViewHolder(v, mContext);
         return viewHolder;
@@ -70,14 +75,25 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             Log.d(TAG, "Cannot open file: " + ioe.getMessage());
         }
 
+        List<Filter> filters = FilterPack.getFilterPack(mContext);
+
         if (bitmap.getWidth() >= bitmap.getHeight()) {
-            holder.mImageView.setImageBitmap(scaleBitmapKeepingRatio(bitmap, 200, 150));
+            bitmap = scaleBitmapKeepingRatio(bitmap, 200, 150);
         } else {
-            holder.mImageView.setImageBitmap(scaleBitmapKeepingRatio(bitmap, 150, 200));
+            bitmap = scaleBitmapKeepingRatio(bitmap, 150, 200);
         }
-        holder.mImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        holder.mImageView.setCropToPadding(true);
-        holder.mImageView.setAdjustViewBounds(true);
+
+        if (position==0){
+            holder.mFilterThumbnail.setImageBitmap(bitmap);
+            holder.mText.setText(R.string.original_image);
+        }else{
+            holder.mFilterThumbnail.setImageBitmap(filters.get(position-1).processFilter(bitmap.copy(Bitmap.Config.ARGB_8888, true)));
+            holder.mText.setText(filters.get(position-1).getName());
+        }
+
+        holder.mFilterThumbnail.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        holder.mFilterThumbnail.setCropToPadding(true);
+        holder.mFilterThumbnail.setAdjustViewBounds(true);
         holder.mPicture = mPictures.get(position);
     }
 
@@ -113,7 +129,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         return background;
     }
 
-
     @Override
     public int getItemCount() {
         return mPictures.size();
@@ -121,20 +136,23 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     public class ViewHolder extends RecyclerView.ViewHolder{
 
-        public ImageView mImageView;
+        public ImageView mFilterThumbnail;
         public Picture mPicture;
         private Context mContext;
-
+        private TextView mText;
 
         public ViewHolder(View itemView, Context context) {
             super(itemView);
             mContext = context;
-            mImageView = (ImageView)itemView.findViewById(R.id.picture_thumbnail);
-            mImageView.setOnClickListener(new View.OnClickListener() {
+            mFilterThumbnail = itemView.findViewById(R.id.filter_thumbnail);
+            mText = itemView.findViewById(R.id.filter_text);
+            ImageView mImageView = itemView.findViewById(R.id.image_view_filters);
+            mFilterThumbnail.setOnClickListener(new View.OnClickListener() {
 
                 @Override
                 public void onClick(View v) {
-                    Intent intent =  HomepageActivity.newIntent(mContext, mPicture.getPictureUri().toString(), 2);
+                    int position = getPosition();
+                    Intent intent =  HomepageActivity.filterIntent(mContext, mPicture.getPictureUri().toString(), 2, position);
                     mContext.startActivity(intent);
                 }
             });

@@ -16,7 +16,7 @@
         <android.support.v7.widget.CardView
             android:id="@+id/card_view_pictures"
             android:layout_width="match_parent"
-            android:layout_height="80dp">
+            android:layout_height="100dp">
             <fragment
                 android:id="@+id/fragment"
                 android:name="com.filters.shades.PictureListFragment"
@@ -53,8 +53,6 @@
             android:text="@string/button_from_url"
             android:layout_marginStart="35dp"/>
 
-
     </LinearLayout>
-
 
 </LinearLayout>

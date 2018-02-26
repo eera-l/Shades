@@ -1,6 +1,5 @@
 package com.filters.shades;
 
-
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -8,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
@@ -17,19 +15,14 @@ import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.util.Log;
 import android.media.FaceDetector;
-import android.media.FaceDetector.Face;
 import android.widget.ImageView;
-
-import com.bumptech.glide.Glide;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URL;
+import com.facebook.FacebookSdk;
+import com.facebook.share.model.SharePhoto;
+import com.facebook.share.model.SharePhotoContent;
+import com.facebook.share.widget.ShareButton;
+import com.zomato.photofilters.FilterPack;
+import com.zomato.photofilters.imageprocessors.Filter;
+import java.util.List;
 
 
 public class HomepageActivity extends AppCompatActivity {
@@ -39,6 +32,7 @@ public class HomepageActivity extends AppCompatActivity {
 
     public static final String EXTRA_PICTURE = "com.filters.shades.picture";
     public static final String EXTRA_ORIGIN = "com.filters.shades.origin";
+    public static final String EXTRA_POSITION = "com.filters.shades.position";
     public static final String TAG = "com.filters.shades";
     private static final int MAX_FACES = 1;
 
@@ -49,6 +43,14 @@ public class HomepageActivity extends AppCompatActivity {
         intent.putExtra(EXTRA_ORIGIN, uploaded);
         return intent;
     }
+    public static Intent filterIntent(Context packageContext, String picturePath, int uploaded, int position) {
+
+        Intent intent = new Intent(packageContext, HomepageActivity.class);
+        intent.putExtra(EXTRA_PICTURE, picturePath);
+        intent.putExtra(EXTRA_ORIGIN, uploaded);
+        intent.putExtra(EXTRA_POSITION, position);
+        return intent;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,12 +58,12 @@ public class HomepageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_homepage);
 
-
-        mPictureView = (ImageView)findViewById(R.id.image_view_picture);
+        mPictureView = (ImageView)findViewById(R.id.image_view_filters);
         String pictureToShowPath = getIntent().getStringExtra(EXTRA_PICTURE);
         Uri selectedImage = Uri.parse(pictureToShowPath);
+        int position = getIntent().getIntExtra(EXTRA_POSITION, 0);
         int up = getIntent().getIntExtra(EXTRA_ORIGIN, 0);
-        Bitmap bitmap;
+        Bitmap bitmap = null;
         try {
             if (up == 0) {
                 bitmap = BitmapFactory.decodeFile(selectedImage.getPath());
@@ -71,9 +73,17 @@ public class HomepageActivity extends AppCompatActivity {
             } else {
                 bitmap = BitmapFactory.decodeFile(selectedImage.getPath());
             }
-            mPictureView.setImageBitmap(bitmap);
+
         } catch (Exception ioe) {
             Log.d(TAG, "Error uploading the picture: " + ioe.getMessage());
+        }
+
+        if (position!=0){
+            List<Filter> filters = FilterPack.getFilterPack(getBaseContext());
+            bitmap = filters.get(position-1).processFilter(bitmap.copy(Bitmap.Config.ARGB_8888, true));
+            mPictureView.setImageBitmap(bitmap);
+        }else {
+            mPictureView.setImageBitmap(bitmap);
         }
 
         mCardView = (CardView)findViewById(R.id.card_view_filters);
@@ -85,6 +95,7 @@ public class HomepageActivity extends AppCompatActivity {
         }
         mCardView.setCardElevation(0);
 
+        publishToFaceBook(bitmap);
     }
 
     private Bitmap flipBitmapHorizontally(Bitmap source) {
@@ -139,5 +150,16 @@ public class HomepageActivity extends AppCompatActivity {
             }
 
             //mPictureView.setDisplayPoints(fpx, fpy, count, 0);
-        }
+    }
+
+    public void publishToFaceBook(Bitmap bitmap){
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        final ShareButton fbShareButton = (ShareButton) findViewById(R.id.share_btn);
+        final Bitmap finalBitmap = bitmap;
+
+        SharePhoto photo = new SharePhoto.Builder().setBitmap(finalBitmap).build();
+        SharePhotoContent content = new SharePhotoContent.Builder().addPhoto(photo).build();
+
+        fbShareButton.setShareContent(content);
+    }
 }
