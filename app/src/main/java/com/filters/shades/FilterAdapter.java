@@ -147,6 +147,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             mFilterThumbnail = itemView.findViewById(R.id.filter_thumbnail);
             mText = itemView.findViewById(R.id.filter_text);
             ImageView mImageView = itemView.findViewById(R.id.image_view_filters);
+
             mFilterThumbnail.setOnClickListener(new View.OnClickListener() {
 
                 @Override
@@ -157,7 +158,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
                 }
             });
         }
-
     }
     private Bitmap flipBitmapHorizontally(Bitmap source) {
         float centerX = source.getWidth() / 2;

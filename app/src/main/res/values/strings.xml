@@ -11,4 +11,8 @@
     <string name="original_image">Original</string>
     <string name="facebook_app_id">577732609227898</string>
     <string name="share">fb_share</string>
+    <string name="brightness_text">brightness</string>
+    <string name="contrast_text">contrast</string>
+    <string name="saturation_text">saturation</string>
+    <string name="save_button_text">save</string>
 </resources>
