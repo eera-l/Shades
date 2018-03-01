@@ -155,30 +155,8 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
                 @Override
                 public void onClick(View v) {
 
-                    Uri selectedImage = Uri.parse(mPicture.getPictureUri().toString());
-                    Bitmap finalBitmap = null;
-                    try {
-                        if (mMode == 0) {
-                            finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                            finalBitmap = flipBitmapHorizontally(finalBitmap);
-                        } else if (mMode == 1) {
-                            finalBitmap = MediaStore.Images.Media.getBitmap(mActivity.getContentResolver(), selectedImage);
-                        } else {
-                            finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                        }
-
-                    } catch (Exception ioe) {
-                        Log.d(TAG, "Error uploading the picture: " + ioe.getMessage());
-                    }
-                    int position = getPosition();
-
-                    if (position!=0){
-                        List<Filter> filters = FilterPack.getFilterPack((mActivity).getBaseContext());
-                        finalBitmap = filters.get(position-1).processFilter(finalBitmap.copy(Bitmap.Config.ARGB_8888, true));
-                        ((HomepageActivity)mActivity).mPictureView.setImageBitmap(finalBitmap);
-                    }else {
-                        ((HomepageActivity)mActivity).mPictureView.setImageBitmap(finalBitmap);
-                    }
+                    ((HomepageActivity)mActivity).setImage(mPicture.getPictureUri().toString(), mMode, getPosition());
+                    //HomepageActivity.filterIntent(mActivity, mPicture.getPictureUri().toString(), mMode, position);
                 }
             });
         }
