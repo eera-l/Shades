@@ -1,5 +1,6 @@
 package com.filters.shades;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -7,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
@@ -40,12 +42,14 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     private List<Picture> mPictures;
     private Context mContext;
     private int mMode;
+    private Activity mActivity;
 
-    public FilterAdapter(PictureList mPicturePaths, Context context, int mode) {
+    public FilterAdapter(PictureList mPicturePaths, Activity context, int mode) {
         mPictures = new ArrayList<>();
         mPictures = mPicturePaths.getPictures();
         mContext = context;
         mMode = mode;
+        mActivity = context;
     }
 
     @Override
@@ -138,7 +142,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
         public ImageView mFilterThumbnail;
         public Picture mPicture;
-        private Context mContext;
         private TextView mText;
 
         public ViewHolder(View itemView, Context context) {
@@ -146,15 +149,14 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             mContext = context;
             mFilterThumbnail = itemView.findViewById(R.id.filter_thumbnail);
             mText = itemView.findViewById(R.id.filter_text);
-            ImageView mImageView = itemView.findViewById(R.id.image_view_filters);
 
             mFilterThumbnail.setOnClickListener(new View.OnClickListener() {
 
                 @Override
                 public void onClick(View v) {
-                    int position = getPosition();
-                    Intent intent =  HomepageActivity.filterIntent(mContext, mPicture.getPictureUri().toString(), 2, position);
-                    mContext.startActivity(intent);
+
+                    ((HomepageActivity)mActivity).setImage(mPicture.getPictureUri().toString(), mMode, getPosition());
+                    //HomepageActivity.filterIntent(mActivity, mPicture.getPictureUri().toString(), mMode, position);
                 }
             });
         }

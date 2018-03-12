@@ -43,7 +43,7 @@ import java.util.Locale;
 
 public class HomepageActivity extends AppCompatActivity{
 
-    private ImageView mPictureView;
+    public ImageView mPictureView;
     private CardView mCardView;
     private Bitmap finalBitmap;
     private SeekBar seekBarBrightness;
@@ -77,10 +77,40 @@ public class HomepageActivity extends AppCompatActivity{
         return intent;
     }
 
+    public void setImage(String picturePath, int uploaded, int position) {
+        Uri selectedImage = Uri.parse(picturePath);
+        finalBitmap = null;
+        try {
+            if (uploaded == 0) {
+                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
+                finalBitmap = flipBitmapHorizontally(finalBitmap);
+            } else if (uploaded == 1) {
+                finalBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImage);
+            } else {
+                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
+            }
+
+        } catch (Exception ioe) {
+            Log.d(TAG, "Error uploading the picture: " + ioe.getMessage());
+        }
+
+        if (position!=0){
+            List<Filter> filters = FilterPack.getFilterPack(getBaseContext());
+            finalBitmap = filters.get(position-1).processFilter(finalBitmap.copy(Bitmap.Config.ARGB_8888, true));
+            mPictureView.setImageBitmap(finalBitmap);
+        }else {
+            mPictureView.setImageBitmap(finalBitmap);
+        }
+        publishToFaceBook(finalBitmap);
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_homepage);
+
+        overridePendingTransition(0, 0);
 
         mPictureView = (ImageView)findViewById(R.id.image_view_filters);
         String pictureToShowPath = getIntent().getStringExtra(EXTRA_PICTURE);
