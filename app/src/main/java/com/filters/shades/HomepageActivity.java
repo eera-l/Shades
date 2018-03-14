@@ -60,20 +60,13 @@ public class HomepageActivity extends AppCompatActivity{
     public static final String EXTRA_POSITION = "com.filters.shades.position";
     public static final String TAG = "com.filters.shades";
     private static final int MAX_FACES = 1;
+    private String manufacturer = Build.MANUFACTURER;
 
     public static Intent newIntent(Context packageContext, String picturePath, int uploaded) {
 
         Intent intent = new Intent(packageContext, HomepageActivity.class);
         intent.putExtra(EXTRA_PICTURE, picturePath);
         intent.putExtra(EXTRA_ORIGIN, uploaded);
-        return intent;
-    }
-    public static Intent filterIntent(Context packageContext, String picturePath, int uploaded, int position) {
-
-        Intent intent = new Intent(packageContext, HomepageActivity.class);
-        intent.putExtra(EXTRA_PICTURE, picturePath);
-        intent.putExtra(EXTRA_ORIGIN, uploaded);
-        intent.putExtra(EXTRA_POSITION, position);
         return intent;
     }
 
@@ -83,9 +76,16 @@ public class HomepageActivity extends AppCompatActivity{
         try {
             if (uploaded == 0) {
                 finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                finalBitmap = flipBitmapHorizontally(finalBitmap);
+                if (!manufacturer.equalsIgnoreCase("samsung")) {
+                    finalBitmap = flipBitmapHorizontally(finalBitmap);
+                }
             } else if (uploaded == 1) {
                 finalBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImage);
+            } else if (uploaded == 2){
+                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
+                if (manufacturer.equalsIgnoreCase("samsung")) {
+                    finalBitmap = rotate(finalBitmap, 90);
+                }
             } else {
                 finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
             }
@@ -121,11 +121,16 @@ public class HomepageActivity extends AppCompatActivity{
         try {
             if (up == 0) {
                 finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                finalBitmap = flipBitmapHorizontally(finalBitmap);
+                if (!manufacturer.equalsIgnoreCase("samsung")) {
+                    finalBitmap = flipBitmapHorizontally(finalBitmap);
+                }
             } else if (up == 1) {
                 finalBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
             } else {
                 finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
+                if (manufacturer.equalsIgnoreCase("samsung")) {
+                    finalBitmap = rotate(finalBitmap, 90);
+                }
             }
 
         } catch (Exception ioe) {
@@ -223,9 +228,7 @@ public class HomepageActivity extends AppCompatActivity{
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 saveBitmapToStorage(finalBitmap);
-
             }
         });
     }
@@ -237,6 +240,15 @@ public class HomepageActivity extends AppCompatActivity{
         Matrix matrix = new Matrix();
         matrix.postScale(-1, 1, centerX, centerY);
 
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    private Bitmap rotate(Bitmap source, float degrees){
+        float centerX = source.getWidth() / 2;
+        float centerY = source.getHeight() / 2;
+
+        Matrix matrix = new Matrix();
+        matrix.postRotate((float) degrees, centerX, centerY);
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
@@ -361,6 +373,7 @@ public class HomepageActivity extends AppCompatActivity{
         ContentResolver cr = getContentResolver();
         cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
     }
+
     private static File getOutputMediaFile(int type) {
         //Get folder on phone's storage
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Shades");
