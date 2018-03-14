@@ -64,40 +64,28 @@ public class CameraActivity extends Activity {
             }
             try {
                 FileOutputStream fileOutputStream = new FileOutputStream(pictureFile);
-                fileOutputStream.write(data);
-                /*String file = pictureFile.getPath();
-                BitmapFactory.Options bounds = new BitmapFactory.Options();
-                bounds.inJustDecodeBounds = true;
-                BitmapFactory.decodeFile(file, bounds);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                String manufacturer = Build.MANUFACTURER;
+                if (manufacturer.equalsIgnoreCase("samsung")) {
 
-                BitmapFactory.Options opts = new BitmapFactory.Options();
-                Bitmap bm = BitmapFactory.decodeFile(file, opts);
-                ExifInterface exif = null;
-                try {
-                    exif = new ExifInterface(file);
-                } catch (IOException ioe) {
-                    Log.d(TAG, "" + ioe);
+                    ExifInterface exif = new ExifInterface(pictureFile.toString());
+                    if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("6")){
+                        bitmap = rotate(bitmap, 90);
+                    } else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("8")){
+                        bitmap = rotate(bitmap, 270);
+                    } else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("3")){
+                        bitmap = rotate(bitmap, 180);
+                    } else if (exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("0")) {
+                        bitmap = rotate(bitmap, 90);
+                        bitmap = flipBitmapVertically(bitmap);
+                    }
                 }
-                String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-                int orientation = orientString != null ? Integer.parseInt(orientString) :  ExifInterface.ORIENTATION_NORMAL;
-
-                int rotationAngle = 0;
-                if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
-                if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
-                if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
-
-                Matrix matrix = new Matrix();
-                matrix.postScale(-1, 1, (float) bm.getWidth() / 2, (float) bm.getHeight() / 2);
-                //matrix.postRotate(rotationAngle, (float) bm.getWidth() / 2, (float) bm.getHeight() / 2);
-
-                Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, bounds.outWidth, bounds.outHeight, matrix, true);
-                rotatedBitmap.compress(Bitmap.CompressFormat.PNG, 70, fileOutputStream); // bmp is your Bitmap instance
-                // PNG is a lossless format, the compression factor (100) is ignored*/
-
+                //---------------------------------------------------------
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
                 fileOutputStream.close();
 
-                Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), 0);
-                startActivity(intent);
+//                Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), 0);
+//                startActivity(intent);
             } catch (FileNotFoundException fe) {
                 Log.d(TAG, "File not found: " + fe.getMessage());
             } catch (IOException ioe) {
@@ -116,6 +104,8 @@ public class CameraActivity extends Activity {
 
             ContentResolver cr = getContentResolver();
             cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), 0);
+            startActivity(intent);
         }
     };
 
@@ -262,5 +252,21 @@ public class CameraActivity extends Activity {
                         }
                     }
                 });
+    }
+
+    private Bitmap rotate(Bitmap source, float degrees){
+        float centerX = source.getWidth() / 2;
+        float centerY = source.getHeight() / 2;
+        Matrix matrix = new Matrix();
+        matrix.postRotate((float) degrees, centerX, centerY);
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    private Bitmap flipBitmapVertically(Bitmap source) {
+        float centerX = source.getWidth() / 2;
+        float centerY = source.getHeight() / 2;
+        Matrix matrix = new Matrix();
+        matrix.postScale(1, -1, centerX, centerY);
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 }

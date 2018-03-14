@@ -1,5 +1,6 @@
 package com.filters.shades;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -8,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -40,12 +42,15 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     private List<Picture> mPictures;
     private Context mContext;
     private int mMode;
+    private Activity mActivity;
+    private String manufacturer = Build.MANUFACTURER;
 
-    public FilterAdapter(PictureList mPicturePaths, Context context, int mode) {
+    public FilterAdapter(PictureList mPicturePaths, Activity context, int mode) {
         mPictures = new ArrayList<>();
         mPictures = mPicturePaths.getPictures();
         mContext = context;
         mMode = mode;
+        mActivity = context;
     }
 
     @Override
@@ -62,11 +67,16 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         try {
             if (mMode == 0) {
                 bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
-                bitmap = flipBitmapHorizontally(bitmap);
+                if (!manufacturer.equalsIgnoreCase("samsung")) {
+                    bitmap = flipBitmapHorizontally(bitmap);
+                }
             } else if (mMode == 1) {
                 bitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), mPictures.get(position).getPictureUri());
             } else if (mMode == 2) {
                 bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
+                if (manufacturer.equalsIgnoreCase("samsung")) {
+                    bitmap = rotate(bitmap, 90);
+                }
             } else {
                 DownloaderTask downloaderTask = new DownloaderTask();
                 bitmap = (Bitmap)downloaderTask.doInBackground(new Object[] {position});
@@ -152,9 +162,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
                 @Override
                 public void onClick(View v) {
-                    int position = getPosition();
-                    Intent intent =  HomepageActivity.filterIntent(mContext, mPicture.getPictureUri().toString(), 2, position);
-                    mContext.startActivity(intent);
+                    ((HomepageActivity)mActivity).setImage(mPicture.getPictureUri().toString(), mMode, getPosition());
                 }
             });
         }
@@ -168,6 +176,16 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
+
+    private Bitmap rotate(Bitmap source, float degrees){
+        float centerX = source.getWidth() / 2;
+        float centerY = source.getHeight() / 2;
+        Matrix matrix = new Matrix();
+
+        matrix.postRotate((float) degrees, centerX, centerY);
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
 
     private class DownloaderTask extends AsyncTask {
 
