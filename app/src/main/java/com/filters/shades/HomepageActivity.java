@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -49,11 +50,13 @@ import java.util.Locale;
 public class HomepageActivity extends AppCompatActivity{
 
     private ImageView mPictureView;
+    private ImageView mOverlayFilterView;
     private CardView mCardView;
     private Bitmap finalBitmap;
     private SeekBar seekBarBrightness;
     private SeekBar seekBarContrast;
     private SeekBar seekBarSaturation;
+    private Bitmap tempBitmap;
 
     // modified image values
     int brightnessFinal = 0;
@@ -64,7 +67,6 @@ public class HomepageActivity extends AppCompatActivity{
     public static final String EXTRA_ORIGIN = "com.filters.shades.origin";
     public static final String EXTRA_POSITION = "com.filters.shades.position";
     public static final String TAG = "com.filters.shades";
-    private static final int MAX_FACES = 1;
     private String manufacturer = Build.MANUFACTURER;
     public static DatabaseConnector databaseConnector;
 
@@ -108,7 +110,27 @@ public class HomepageActivity extends AppCompatActivity{
             mPictureView.setImageBitmap(finalBitmap);
         }else {
             mPictureView.setImageBitmap(finalBitmap);
-        }       publishToFaceBook(finalBitmap);
+        }
+        publishToFaceBook(finalBitmap);
+        tempBitmap = finalBitmap;
+    }
+
+    public void setOverlayFilter(Bitmap bitmap) {
+
+        if (mOverlayFilterView.getDrawable() == null) {
+            Bitmap result = Bitmap.createBitmap(finalBitmap.getWidth(), finalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(result);
+            canvas.drawBitmap(finalBitmap, 0f, 0f, null);
+            canvas.drawBitmap(bitmap, mOverlayFilterView.getX(), mOverlayFilterView.getY(), null);
+            finalBitmap = result;
+            publishToFaceBook(finalBitmap);
+            mOverlayFilterView.setImageBitmap(finalBitmap);
+        }
+        else {
+            mOverlayFilterView.setImageDrawable(null);
+            finalBitmap = tempBitmap;
+        }
+
     }
 
     @Override
@@ -117,6 +139,7 @@ public class HomepageActivity extends AppCompatActivity{
         setContentView(R.layout.activity_homepage);
 
         mPictureView = (ImageView)findViewById(R.id.image_view_filters);
+        mOverlayFilterView = (ImageView)findViewById(R.id.image_view_overlay_filters);
         String pictureToShowPath = getIntent().getStringExtra(EXTRA_PICTURE);
         Uri selectedImage = Uri.parse(pictureToShowPath);
         int position = getIntent().getIntExtra(EXTRA_POSITION, 0);
@@ -148,6 +171,7 @@ public class HomepageActivity extends AppCompatActivity{
         }else {
             mPictureView.setImageBitmap(finalBitmap);
         }
+        tempBitmap = finalBitmap;
 
         mCardView = (CardView)findViewById(R.id.card_view_filters);
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -361,47 +385,17 @@ public class HomepageActivity extends AppCompatActivity{
     private void connectDatabase() {
         databaseConnector = new DatabaseConnector(this, "FilterDB.sqlite", null, 1);
 
-        databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (Id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, image BLOB);");
+        databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (Id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, image INTEGER);");
+
+        //Bitmap bitmapFlower = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.crown_flowers));
+        //Bitmap bitmapSparkles = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.sparkle));
 
 
-        Bitmap bitmapFlower = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.crown_flowers));
-        Bitmap bitmapSparkles = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.sparkle));
-
-
-        databaseConnector.insertData("Primavera", returnByteArray(bitmapFlower));
-        databaseConnector.insertData("Desir", returnByteArray(bitmapSparkles));
-        System.out.println(databaseConnector.getData("SELECT * FROM FILTER;").getCount());
-        System.out.println("---------------------------------------------------------------------");
-    }
-
-    //Create a Bitmap from Drawable
-    private Bitmap returnBitmapFromDrawable(Drawable drawable)  {
-
-        if (drawable instanceof BitmapDrawable) {
-            return ((BitmapDrawable) drawable).getBitmap();
+        if (databaseConnector.getData("SELECT * FROM FILTER").getCount() < 2) {
+            databaseConnector.insertData("Primavera", R.drawable.crown_flowers);
+            databaseConnector.insertData("Desir", R.drawable.sparkle);
+            System.out.println(databaseConnector.getData("SELECT * FROM FILTER;").getCount());
+            System.out.println("---------------------------------------------------------------------");
         }
-
-        final int width = !drawable.getBounds().isEmpty() ? drawable
-                .getBounds().width() : drawable.getIntrinsicWidth();
-
-        final int height = !drawable.getBounds().isEmpty() ? drawable
-                .getBounds().height() : drawable.getIntrinsicHeight();
-
-        final Bitmap bitmap = Bitmap.createBitmap(width <= 0 ? 1 : width,
-                height <= 0 ? 1 : height, Bitmap.Config.ARGB_8888);
-
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        drawable.draw(canvas);
-
-        return bitmap;
-    }
-
-    //Create byte[] from Bitmap
-    private byte[] returnByteArray(Bitmap bitmap) {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 20, stream);
-
-        return stream.toByteArray();
     }
 }

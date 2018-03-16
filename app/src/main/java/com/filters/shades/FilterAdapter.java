@@ -8,6 +8,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.MediaStore;
@@ -97,10 +99,10 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             do {
                 int id = cursor.getInt(0);
                 String name = cursor.getString(1);
-                byte[] image = cursor.getBlob(2);
+                int imgId = (int)cursor.getLong(2);
 
-                Bitmap bitImage = byteArrayToBitmap(image, 30, 30);
-                mFilters.add(new OverFilter(id, name, bitImage));
+                mFilters.add(new OverFilter(id, name, imgId));
+
             } while (cursor.moveToNext());
         }
 
@@ -116,10 +118,10 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             holder.mFilterThumbnail.setImageBitmap(bitmap);
             holder.mText.setText(R.string.original_image);
         } else if (position == 17) {
-            holder.mFilterThumbnail.setImageBitmap(mFilters.get(0).getImage());
+            holder.mFilterThumbnail.setImageBitmap(returnBitmapFromDrawable(mActivity.getResources().getDrawable(mFilters.get(0).getImage())));
             holder.mText.setText(mFilters.get(0).getName());
         } else if (position == 18) {
-            holder.mFilterThumbnail.setImageBitmap(mFilters.get(1).getImage());
+            holder.mFilterThumbnail.setImageBitmap(returnBitmapFromDrawable(mActivity.getResources().getDrawable(mFilters.get(1).getImage())));
             holder.mText.setText(mFilters.get(1).getName());
         } else{
             holder.mFilterThumbnail.setImageBitmap(filters.get(position-1).processFilter(bitmap.copy(Bitmap.Config.ARGB_8888, true)));
@@ -130,27 +132,14 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         holder.mFilterThumbnail.setCropToPadding(true);
         holder.mFilterThumbnail.setAdjustViewBounds(true);
         holder.mPicture = mPictures.get(position);
+
+        if (position == 17)
+            holder.mOverFilter = mFilters.get(0);
+        else if (position == 18) {
+            holder.mOverFilter = mFilters.get(1);
+        }
     }
 
-    private Bitmap byteArrayToBitmap(byte[] image, int width, int height) {
-
-        BitmapFactory.Options bfo = new BitmapFactory.Options();
-        bfo.inJustDecodeBounds = true;
-
-        //The new size we want to scale to
-        final int REQUIRED_WIDTH = width;
-        final int REQUIRED_HEIGHT= height;
-        //Find the correct scale value. It should be the power of 2.
-        int scale=1;
-        while(bfo.outWidth / scale / 2 >= REQUIRED_WIDTH && bfo.outHeight / scale / 2 >= REQUIRED_HEIGHT)
-            scale*=2;
-
-        //Decode with inSampleSize
-        BitmapFactory.Options o2 = new BitmapFactory.Options();
-        o2.inSampleSize=scale;
-        Bitmap bitmap = BitmapFactory.decodeByteArray(image, 0, image.length, o2);
-        return bitmap;
-    }
 
     private Bitmap scaleBitmapKeepingRatio(Bitmap bitmap, int destWidth, int destHeight) {
         Bitmap background = Bitmap.createBitmap(destWidth, destHeight, Bitmap.Config.ARGB_8888);
@@ -193,6 +182,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
         public ImageView mFilterThumbnail;
         public Picture mPicture;
+        public OverFilter mOverFilter;
         private Context mContext;
         private TextView mText;
 
@@ -207,7 +197,12 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
                 @Override
                 public void onClick(View v) {
-                    ((HomepageActivity)mActivity).setImage(mPicture.getPictureUri().toString(), mMode, getPosition());
+
+                    if (getPosition() == 17 || getPosition() == 18) {
+                        ((HomepageActivity)mActivity).setOverlayFilter(returnBitmapFromDrawable(mActivity.getResources().getDrawable(mOverFilter.getImage())));
+                    } else {
+                        ((HomepageActivity) mActivity).setImage(mPicture.getPictureUri().toString(), mMode, getPosition());
+                    }
                 }
             });
         }
@@ -231,6 +226,29 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
+    //Create a Bitmap from Drawable
+    private Bitmap returnBitmapFromDrawable(Drawable drawable)  {
+
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
+        }
+
+        final int width = !drawable.getBounds().isEmpty() ? drawable
+                .getBounds().width() : drawable.getIntrinsicWidth();
+
+        final int height = !drawable.getBounds().isEmpty() ? drawable
+                .getBounds().height() : drawable.getIntrinsicHeight();
+
+        final Bitmap bitmap = Bitmap.createBitmap(width <= 0 ? 1 : width,
+                height <= 0 ? 1 : height, Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
+    }
+
 
     private class DownloaderTask extends AsyncTask {
 
@@ -248,4 +266,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             return bitmap;
         }
     }
+
+
 }

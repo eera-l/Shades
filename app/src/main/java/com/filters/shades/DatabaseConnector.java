@@ -22,13 +22,13 @@ public class DatabaseConnector extends SQLiteOpenHelper {
         database.execSQL(sqlString);
     }
 
-    public void insertData(String name, byte[] image) {
+    public void insertData(String name, int imgUrl) {
         SQLiteDatabase database = getWritableDatabase();
         String sqlString = "INSERT INTO FILTER VALUES (NULL, ?, ?);";
 
         SQLiteStatement statement = database.compileStatement(sqlString);
         statement.bindString(1, name);
-        statement.bindBlob(2, image);
+        statement.bindLong(2, imgUrl);
         statement.execute();
     }
 

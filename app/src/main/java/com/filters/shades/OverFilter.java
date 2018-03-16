@@ -9,10 +9,10 @@ import android.graphics.Bitmap;
 public class OverFilter {
 
     private String mName;
-    private Bitmap mImage;
+    private int mImage;
     private int mId;
 
-    public OverFilter(int mId, String mName, Bitmap mImage) {
+    public OverFilter(int mId, String mName, int mImage) {
         this.mName = mName;
         this.mImage = mImage;
         this.mId = mId;
@@ -26,11 +26,11 @@ public class OverFilter {
         this.mName = mName;
     }
 
-    public Bitmap getImage() {
+    public int getImage() {
         return mImage;
     }
 
-    public void setImage(Bitmap mImage) {
+    public void setImage(int mImage) {
         this.mImage = mImage;
     }
 
