@@ -6,8 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -31,6 +34,8 @@ import com.zomato.photofilters.imageprocessors.Filter;
 import com.zomato.photofilters.imageprocessors.subfilters.BrightnessSubFilter;
 import com.zomato.photofilters.imageprocessors.subfilters.ContrastSubFilter;
 import com.zomato.photofilters.imageprocessors.subfilters.SaturationSubfilter;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -61,6 +66,7 @@ public class HomepageActivity extends AppCompatActivity{
     public static final String TAG = "com.filters.shades";
     private static final int MAX_FACES = 1;
     private String manufacturer = Build.MANUFACTURER;
+    public static DatabaseConnector databaseConnector;
 
     public static Intent newIntent(Context packageContext, String picturePath, int uploaded) {
 
@@ -229,6 +235,8 @@ public class HomepageActivity extends AppCompatActivity{
                 saveBitmapToStorage(finalBitmap);
             }
         });
+
+        connectDatabase();
     }
 
     private Bitmap flipBitmapHorizontally(Bitmap source) {
@@ -247,50 +255,6 @@ public class HomepageActivity extends AppCompatActivity{
         Matrix matrix = new Matrix();
         matrix.postRotate((float) degrees, centerX, centerY);
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    private void prepareBitmapForRecognition(Bitmap bitmap) {
-        bitmap = bitmap.copy(Bitmap.Config.RGB_565, true);
-        int faceWidth = bitmap.getWidth();
-        int faceHeight = bitmap.getHeight();
-
-        setFace(bitmap, faceWidth, faceHeight);
-    }
-
-    private void setFace(Bitmap bitmap, int faceWidth, int faceHeight) {
-            FaceDetector fd;
-            FaceDetector.Face [] faces = new FaceDetector.Face[MAX_FACES];
-            PointF midpoint = new PointF();
-            int [] fpx = null;
-            int [] fpy = null;
-            int count = 0;
-
-            try {
-                fd = new FaceDetector(faceWidth, faceHeight, MAX_FACES);
-                count = fd.findFaces(bitmap, faces);
-            } catch (Exception e) {
-                Log.e(TAG, "setFace(): " + e.toString());
-                return;
-            }
-
-            // check if we detect any faces
-            if (count > 0) {
-                fpx = new int[count];
-                fpy = new int[count];
-
-                for (int i = 0; i < count; i++) {
-                    try {
-                        faces[i].getMidPoint(midpoint);
-
-                        fpx[i] = (int)midpoint.x;
-                        fpy[i] = (int)midpoint.y;
-                    } catch (Exception e) {
-                        Log.e(TAG, "setFace(): face " + i + ": " + e.toString());
-                    }
-                }
-            }
-
-            //mPictureView.setDisplayPoints(fpx, fpy, count, 0);
     }
 
     public void publishToFaceBook(Bitmap bitmap){
@@ -392,5 +356,52 @@ public class HomepageActivity extends AppCompatActivity{
             return null;
         }
         return mediaFile;
+    }
+
+    private void connectDatabase() {
+        databaseConnector = new DatabaseConnector(this, "FilterDB.sqlite", null, 1);
+
+        databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (Id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, image BLOB);");
+
+
+        Bitmap bitmapFlower = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.crown_flowers));
+        Bitmap bitmapSparkles = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.sparkle));
+
+
+        databaseConnector.insertData("Primavera", returnByteArray(bitmapFlower));
+        databaseConnector.insertData("Desir", returnByteArray(bitmapSparkles));
+        System.out.println(databaseConnector.getData("SELECT * FROM FILTER;").getCount());
+        System.out.println("---------------------------------------------------------------------");
+    }
+
+    //Create a Bitmap from Drawable
+    private Bitmap returnBitmapFromDrawable(Drawable drawable)  {
+
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
+        }
+
+        final int width = !drawable.getBounds().isEmpty() ? drawable
+                .getBounds().width() : drawable.getIntrinsicWidth();
+
+        final int height = !drawable.getBounds().isEmpty() ? drawable
+                .getBounds().height() : drawable.getIntrinsicHeight();
+
+        final Bitmap bitmap = Bitmap.createBitmap(width <= 0 ? 1 : width,
+                height <= 0 ? 1 : height, Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
+    }
+
+    //Create byte[] from Bitmap
+    private byte[] returnByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 20, stream);
+
+        return stream.toByteArray();
     }
 }

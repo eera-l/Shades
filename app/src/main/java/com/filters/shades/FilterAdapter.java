@@ -2,7 +2,7 @@ package com.filters.shades;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -20,6 +20,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import com.zomato.photofilters.FilterPack;
 import com.zomato.photofilters.imageprocessors.Filter;
+
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,6 +42,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     }
 
     private List<Picture> mPictures;
+    private List<OverFilter> mFilters;
     private Context mContext;
     private int mMode;
     private Activity mActivity;
@@ -47,6 +50,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     public FilterAdapter(PictureList mPicturePaths, Activity context, int mode) {
         mPictures = new ArrayList<>();
+        mFilters = new ArrayList<>();
         mPictures = mPicturePaths.getPictures();
         mContext = context;
         mMode = mode;
@@ -86,6 +90,21 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         }
 
         List<Filter> filters = FilterPack.getFilterPack(mContext);
+        Cursor cursor = ((HomepageActivity)mActivity).databaseConnector.getData("SELECT * FROM FILTER");
+
+        if (cursor.moveToFirst()) {
+
+            do {
+                int id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                byte[] image = cursor.getBlob(2);
+
+                Bitmap bitImage = byteArrayToBitmap(image, 30, 30);
+                mFilters.add(new OverFilter(id, name, bitImage));
+            } while (cursor.moveToNext());
+        }
+
+
 
         if (bitmap.getWidth() >= bitmap.getHeight()) {
             bitmap = scaleBitmapKeepingRatio(bitmap, 200, 150);
@@ -96,7 +115,13 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         if (position==0){
             holder.mFilterThumbnail.setImageBitmap(bitmap);
             holder.mText.setText(R.string.original_image);
-        }else{
+        } else if (position == 17) {
+            holder.mFilterThumbnail.setImageBitmap(mFilters.get(0).getImage());
+            holder.mText.setText(mFilters.get(0).getName());
+        } else if (position == 18) {
+            holder.mFilterThumbnail.setImageBitmap(mFilters.get(1).getImage());
+            holder.mText.setText(mFilters.get(1).getName());
+        } else{
             holder.mFilterThumbnail.setImageBitmap(filters.get(position-1).processFilter(bitmap.copy(Bitmap.Config.ARGB_8888, true)));
             holder.mText.setText(filters.get(position-1).getName());
         }
@@ -105,6 +130,26 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         holder.mFilterThumbnail.setCropToPadding(true);
         holder.mFilterThumbnail.setAdjustViewBounds(true);
         holder.mPicture = mPictures.get(position);
+    }
+
+    private Bitmap byteArrayToBitmap(byte[] image, int width, int height) {
+
+        BitmapFactory.Options bfo = new BitmapFactory.Options();
+        bfo.inJustDecodeBounds = true;
+
+        //The new size we want to scale to
+        final int REQUIRED_WIDTH = width;
+        final int REQUIRED_HEIGHT= height;
+        //Find the correct scale value. It should be the power of 2.
+        int scale=1;
+        while(bfo.outWidth / scale / 2 >= REQUIRED_WIDTH && bfo.outHeight / scale / 2 >= REQUIRED_HEIGHT)
+            scale*=2;
+
+        //Decode with inSampleSize
+        BitmapFactory.Options o2 = new BitmapFactory.Options();
+        o2.inSampleSize=scale;
+        Bitmap bitmap = BitmapFactory.decodeByteArray(image, 0, image.length, o2);
+        return bitmap;
     }
 
     private Bitmap scaleBitmapKeepingRatio(Bitmap bitmap, int destWidth, int destHeight) {
