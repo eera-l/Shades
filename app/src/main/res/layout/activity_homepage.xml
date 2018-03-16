@@ -14,8 +14,8 @@
             android:weightSum="2">
             <com.facebook.share.widget.ShareButton
                 android:id="@+id/share_btn"
-                android:layout_width="80dp"
-                android:layout_height="50dp"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
                 android:layout_weight="1"
                 android:contentDescription="@string/share" />
 

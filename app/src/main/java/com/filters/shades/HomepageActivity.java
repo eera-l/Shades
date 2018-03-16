@@ -121,6 +121,7 @@ public class HomepageActivity extends AppCompatActivity{
         }else {
             mPictureView.setImageBitmap(finalBitmap);
         }
+        tempBitmap = finalBitmap;
 
         CardView mCardView = findViewById(R.id.card_view_filters);
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -214,48 +215,12 @@ public class HomepageActivity extends AppCompatActivity{
         connectDatabase();
     }
 
-    private void prepareBitmapForRecognition(Bitmap bitmap) {
-        bitmap = bitmap.copy(Bitmap.Config.RGB_565, true);
-        int faceWidth = bitmap.getWidth();
-        int faceHeight = bitmap.getHeight();
-
-        setFace(bitmap, faceWidth, faceHeight);
-    }
-
-    private void setFace(Bitmap bitmap, int faceWidth, int faceHeight) {
-            FaceDetector fd;
-            FaceDetector.Face [] faces = new FaceDetector.Face[MAX_FACES];
-            PointF midpoint = new PointF();
-            int [] fpx = null;
-            int [] fpy = null;
-            int count = 0;
-
-            try {
-                fd = new FaceDetector(faceWidth, faceHeight, MAX_FACES);
-                count = fd.findFaces(bitmap, faces);
-            } catch (Exception e) {
-                Log.e(TAG, "setFace(): " + e.toString());
-                return;
-            }
-
-            // check if we detect any faces
-            if (count > 0) {
-                fpx = new int[count];
-                fpy = new int[count];
-
-                for (int i = 0; i < count; i++) {
-                    try {
-                        faces[i].getMidPoint(midpoint);
-
-                        fpx[i] = (int)midpoint.x;
-                        fpy[i] = (int)midpoint.y;
-                    } catch (Exception e) {
-                        Log.e(TAG, "setFace(): face " + i + ": " + e.toString());
-                    }
-                }
-            }
-
-            //mPictureView.setDisplayPoints(fpx, fpy, count, 0);
+    private Bitmap rotate(Bitmap source, float degrees){
+        float centerX = source.getWidth() / 2;
+        float centerY = source.getHeight() / 2;
+        Matrix matrix = new Matrix();
+        matrix.postRotate((float) degrees, centerX, centerY);
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
     public void publishToFaceBook(Bitmap bitmap){

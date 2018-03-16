@@ -81,6 +81,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             bitmap = scaleBitmapKeepingRatio(bitmap, 200, 150);
         } else {
             bitmap = scaleBitmapKeepingRatio(bitmap, 150, 200);
+
         }
 
         if (position == 0){
