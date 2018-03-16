@@ -5,8 +5,6 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -31,7 +29,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-
 import static android.content.ContentValues.TAG;
 import static com.filters.shades.CameraPreview.getCameraInstance;
 
@@ -39,14 +36,12 @@ import static com.filters.shades.CameraPreview.getCameraInstance;
 public class CameraActivity extends Activity {
 
     private Camera mCamera;
-    private CameraPreview mPreview;
-    private Button mButtonCapture;
-    private Button mButtonUpload;
-    private Button mButtonFromURL;
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int GET_FROM_GALLERY = 2;
     public static final String DIALOG_NAME = "com.filters.shades.URLDialogFragment";
-    private CardView mCardView;
+    private ImageBitmap imageBitmap = ImageBitmap.getInstance();
+    private Bitmap bitmap;
+    private String manufacturer = Build.MANUFACTURER;
     private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
@@ -58,22 +53,21 @@ public class CameraActivity extends Activity {
             }
             try {
                 FileOutputStream fileOutputStream = new FileOutputStream(pictureFile);
-                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                String manufacturer = Build.MANUFACTURER;
+
+                imageBitmap.createBitmap(data);
+                bitmap = imageBitmap.getBitmap();
 
                 if (manufacturer.equalsIgnoreCase("samsung")) {
-
                     ExifInterface exif = new ExifInterface(pictureFile.toString());
-
                     if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("6")){
-                        bitmap = rotate(bitmap, 90);
+                        bitmap = imageBitmap.rotate(bitmap, 90);
                     } else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("8")){
-                        bitmap = rotate(bitmap, 270);
+                        bitmap = imageBitmap.rotate(bitmap, 270);
                     } else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("3")){
-                        bitmap = rotate(bitmap, 180);
+                        bitmap = imageBitmap.rotate(bitmap, 180);
                     } else if (exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("0")) {
-                        bitmap = rotate(bitmap, 90);
-                        bitmap = flipBitmapVertically(bitmap);
+                        bitmap = imageBitmap.rotate(bitmap, 90);
+                        bitmap = imageBitmap.flipBitmapVertically(bitmap);
                     }
                 }
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
@@ -98,7 +92,7 @@ public class CameraActivity extends Activity {
             ContentResolver cr = getContentResolver();
             cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
 
-            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getPath(), 0);
+            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.getAbsolutePath());
             startActivity(intent);
         }
     };
@@ -122,12 +116,11 @@ public class CameraActivity extends Activity {
         mCamera.setParameters(parameters);
 
         // Create our Preview view and set it as the content of our activity.
-        mPreview = new CameraPreview(this, mCamera);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        CameraPreview mPreview = new CameraPreview(this, mCamera);
+        FrameLayout preview = findViewById(R.id.camera_preview);
         preview.addView(mPreview);
 
-
-        mButtonCapture = (Button)findViewById(R.id.button_capture);
+        Button mButtonCapture = findViewById(R.id.button_capture);
         mButtonCapture.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -136,7 +129,7 @@ public class CameraActivity extends Activity {
             }
         });
 
-        mButtonUpload = (Button)findViewById(R.id.button_upload);
+        Button mButtonUpload = findViewById(R.id.button_upload);
         mButtonUpload.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -145,7 +138,7 @@ public class CameraActivity extends Activity {
             }
         });
 
-        mButtonFromURL = (Button)findViewById(R.id.button_from_url);
+        Button mButtonFromURL = findViewById(R.id.button_from_url);
         mButtonFromURL.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -154,7 +147,7 @@ public class CameraActivity extends Activity {
             }
         });
 
-        mCardView = (CardView)findViewById(R.id.card_view_pictures);
+        CardView mCardView = findViewById(R.id.card_view_pictures);
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             mCardView.getBackground().setAlpha(0);
         }
@@ -196,7 +189,21 @@ public class CameraActivity extends Activity {
 
         if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
             Uri pictureFile = data.getData();
-            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureFile.toString(), 1);
+            String pictureToShowPath = pictureFile.toString();
+            Uri selectedImage = Uri.parse(pictureToShowPath);
+
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (manufacturer.equalsIgnoreCase("samsung")){
+                imageBitmap.rotate(bitmap,90);
+            }else {
+                imageBitmap.setBitmap(bitmap);
+            }
+            Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureToShowPath);
             startActivity(intent);
         }
     }
@@ -239,31 +246,12 @@ public class CameraActivity extends Activity {
 
                                 ContentResolver cr = getContentResolver();
                                 cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-                                Intent intent = HomepageActivity.newIntent(getApplicationContext(), mediaFile.getPath(), 2);
+                                Intent intent = HomepageActivity.newIntent(getApplicationContext(), mediaFile.getPath());
                                 startActivity(intent);
                         } catch (IOException ioe) {
 
                         }
                     }
                 });
-    }
-
-    private Bitmap rotate(Bitmap source, float degrees){
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
-
-        Matrix matrix = new Matrix();
-        matrix.postRotate((float) degrees, centerX, centerY);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    private Bitmap flipBitmapVertically(Bitmap source) {
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
-
-        Matrix matrix = new Matrix();
-        matrix.postScale(1, -1, centerX, centerY);
-
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 }

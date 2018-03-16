@@ -5,10 +5,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
+import android.graphics.Canvas;
 import android.graphics.PointF;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -22,6 +20,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.Toast;
 import com.facebook.FacebookSdk;
 import com.facebook.share.model.SharePhoto;
 import com.facebook.share.model.SharePhotoContent;
@@ -40,15 +39,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-
 public class HomepageActivity extends AppCompatActivity{
 
     public ImageView mPictureView;
-    private CardView mCardView;
-    private Bitmap finalBitmap;
-    private SeekBar seekBarBrightness;
-    private SeekBar seekBarContrast;
-    private SeekBar seekBarSaturation;
+    private ImageView mOverlayFilterView;
+    private Bitmap tempBitmap;
 
     // modified image values
     int brightnessFinal = 0;
@@ -60,39 +55,18 @@ public class HomepageActivity extends AppCompatActivity{
     public static final String EXTRA_POSITION = "com.filters.shades.position";
     public static final String TAG = "com.filters.shades";
     private static final int MAX_FACES = 1;
-    private String manufacturer = Build.MANUFACTURER;
+    private ImageBitmap imageBitmap;
+    private Bitmap finalBitmap;
+    public static DatabaseConnector databaseConnector;
 
-    public static Intent newIntent(Context packageContext, String picturePath, int uploaded) {
-
+    public static Intent newIntent(Context packageContext, String picturePath) {
         Intent intent = new Intent(packageContext, HomepageActivity.class);
         intent.putExtra(EXTRA_PICTURE, picturePath);
-        intent.putExtra(EXTRA_ORIGIN, uploaded);
         return intent;
     }
-
-    public void setImage(String picturePath, int uploaded, int position) {
-        Uri selectedImage = Uri.parse(picturePath);
-        finalBitmap = null;
-        try {
-            if (uploaded == 0) {
-                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                if (!manufacturer.equalsIgnoreCase("samsung")) {
-                    finalBitmap = flipBitmapHorizontally(finalBitmap);
-                }
-            } else if (uploaded == 1) {
-                finalBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImage);
-            } else if (uploaded == 2){
-                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                if (manufacturer.equalsIgnoreCase("samsung")) {
-                    finalBitmap = rotate(finalBitmap, 90);
-                }
-            } else {
-                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-            }
-
-        } catch (Exception ioe) {
-            Log.d(TAG, "Error uploading the picture: " + ioe.getMessage());
-        }
+    public void setImage(int position) {
+        imageBitmap = ImageBitmap.getInstance();
+        finalBitmap = imageBitmap.getBitmap();
 
         if (position!=0){
             List<Filter> filters = FilterPack.getFilterPack(getBaseContext());
@@ -101,9 +75,30 @@ public class HomepageActivity extends AppCompatActivity{
         }else {
             mPictureView.setImageBitmap(finalBitmap);
         }
+
         publishToFaceBook(finalBitmap);
+        tempBitmap = finalBitmap;
     }
 
+    public void setOverlayFilter(Bitmap bitmap) {
+        imageBitmap = ImageBitmap.getInstance();
+        finalBitmap = imageBitmap.getBitmap();
+
+        if (mOverlayFilterView.getDrawable() == null) {
+            Bitmap result = Bitmap.createBitmap(finalBitmap.getWidth(), finalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(result);
+            canvas.drawBitmap(finalBitmap, 0f, 0f, null);
+            canvas.drawBitmap(bitmap, mOverlayFilterView.getX(), mOverlayFilterView.getY(), null);
+            finalBitmap = result;
+            publishToFaceBook(finalBitmap);
+            mOverlayFilterView.setImageBitmap(finalBitmap);
+        }
+        else {
+            mOverlayFilterView.setImageDrawable(null);
+            finalBitmap = tempBitmap;
+        }
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,30 +107,12 @@ public class HomepageActivity extends AppCompatActivity{
 
         overridePendingTransition(0, 0);
 
-        mPictureView = (ImageView)findViewById(R.id.image_view_filters);
-        String pictureToShowPath = getIntent().getStringExtra(EXTRA_PICTURE);
-        Uri selectedImage = Uri.parse(pictureToShowPath);
-        int position = getIntent().getIntExtra(EXTRA_POSITION, 0);
-        int up = getIntent().getIntExtra(EXTRA_ORIGIN, 0);
-        finalBitmap = null;
-        try {
-            if (up == 0) {
-                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                if (!manufacturer.equalsIgnoreCase("samsung")) {
-                    finalBitmap = flipBitmapHorizontally(finalBitmap);
-                }
-            } else if (up == 1) {
-                finalBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
-            } else {
-                finalBitmap = BitmapFactory.decodeFile(selectedImage.getPath());
-                if (manufacturer.equalsIgnoreCase("samsung")) {
-                    finalBitmap = rotate(finalBitmap, 90);
-                }
-            }
+        mPictureView = findViewById(R.id.image_view_filters);
+        mOverlayFilterView = (ImageView)findViewById(R.id.image_view_overlay_filters);
+        imageBitmap = ImageBitmap.getInstance();
+        finalBitmap = imageBitmap.getBitmap();
 
-        } catch (Exception ioe) {
-            Log.d(TAG, "Error uploading the picture: " + ioe.getMessage());
-        }
+        int position = getIntent().getIntExtra(EXTRA_POSITION, 0);
 
         if (position!=0){
             List<Filter> filters = FilterPack.getFilterPack(getBaseContext());
@@ -145,7 +122,7 @@ public class HomepageActivity extends AppCompatActivity{
             mPictureView.setImageBitmap(finalBitmap);
         }
 
-        mCardView = (CardView)findViewById(R.id.card_view_filters);
+        CardView mCardView = findViewById(R.id.card_view_filters);
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             mCardView.getBackground().setAlpha(0);
         }
@@ -154,19 +131,17 @@ public class HomepageActivity extends AppCompatActivity{
         }
         mCardView.setCardElevation(0);
 
-        publishToFaceBook(finalBitmap);
-
-        seekBarBrightness = (SeekBar)findViewById(R.id.seekbar_brightness);
+        SeekBar seekBarBrightness = findViewById(R.id.seekbar_brightness);
         seekBarBrightness.setMax(200);
         seekBarBrightness.setProgress(100);
 
         // keeping contrast value b/w 1.0 - 3.0
-        seekBarContrast = (SeekBar)findViewById(R.id.seekbar_contrast);
+        SeekBar seekBarContrast = findViewById(R.id.seekbar_contrast);
         seekBarContrast.setMax(20);
         seekBarContrast.setProgress(0);
 
         // keeping saturation value b/w 0.0 - 3.0
-        seekBarSaturation = (SeekBar)findViewById(R.id.seekbar_saturation);
+        SeekBar seekBarSaturation = findViewById(R.id.seekbar_saturation);
         seekBarSaturation.setMax(30);
         seekBarSaturation.setProgress(10);
 
@@ -183,7 +158,7 @@ public class HomepageActivity extends AppCompatActivity{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                onEditCompleted();
+                //onEditCompleted();
             }
         });
 
@@ -202,7 +177,7 @@ public class HomepageActivity extends AppCompatActivity{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                onEditCompleted();
+                //onEditCompleted();
             }
         });
 
@@ -220,36 +195,23 @@ public class HomepageActivity extends AppCompatActivity{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                onEditCompleted();
+                //onEditCompleted();
             }
         });
 
-        Button saveButton = (Button)findViewById(R.id.save_button);
+        Button saveButton = findViewById(R.id.save_button);
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 saveBitmapToStorage(finalBitmap);
+                Toast toast = Toast.makeText(getApplicationContext(), "Image saved to Shades folder", Toast.LENGTH_SHORT);
+                toast.show();
             }
         });
-    }
 
-    private Bitmap flipBitmapHorizontally(Bitmap source) {
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
+        publishToFaceBook(finalBitmap);
 
-        Matrix matrix = new Matrix();
-        matrix.postScale(-1, 1, centerX, centerY);
-
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    private Bitmap rotate(Bitmap source, float degrees){
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
-
-        Matrix matrix = new Matrix();
-        matrix.postRotate((float) degrees, centerX, centerY);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+        connectDatabase();
     }
 
     private void prepareBitmapForRecognition(Bitmap bitmap) {
@@ -298,19 +260,13 @@ public class HomepageActivity extends AppCompatActivity{
 
     public void publishToFaceBook(Bitmap bitmap){
         FacebookSdk.sdkInitialize(getApplicationContext());
-        final ShareButton fbShareButton = (ShareButton) findViewById(R.id.share_btn);
+        final ShareButton fbShareButton = findViewById(R.id.share_btn);
         final Bitmap bitmapFinal = bitmap;
 
         SharePhoto photo = new SharePhoto.Builder().setBitmap(bitmapFinal).build();
         SharePhotoContent content = new SharePhotoContent.Builder().addPhoto(photo).build();
 
         fbShareButton.setShareContent(content);
-    }
-
-    public void changeFilter(int filter){
-        List<Filter> filters = FilterPack.getFilterPack(getBaseContext());
-        finalBitmap = filters.get(filter-1).processFilter(finalBitmap.copy(Bitmap.Config.ARGB_8888, true));
-        mPictureView.setImageBitmap(finalBitmap);
     }
 
     public void onBrightnessChanged(final int brightness) {
@@ -395,5 +351,22 @@ public class HomepageActivity extends AppCompatActivity{
             return null;
         }
         return mediaFile;
+    }
+
+    private void connectDatabase() {
+        databaseConnector = new DatabaseConnector(this, "FilterDB.sqlite", null, 1);
+
+        databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (Id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, image INTEGER);");
+
+        //Bitmap bitmapFlower = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.crown_flowers));
+        //Bitmap bitmapSparkles = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.sparkle));
+
+
+        if (databaseConnector.getData("SELECT * FROM FILTER").getCount() < 2) {
+            databaseConnector.insertData("Primavera", R.drawable.crown_flowers);
+            databaseConnector.insertData("Desir", R.drawable.sparkle);
+            System.out.println(databaseConnector.getData("SELECT * FROM FILTER;").getCount());
+            System.out.println("---------------------------------------------------------------------");
+        }
     }
 }

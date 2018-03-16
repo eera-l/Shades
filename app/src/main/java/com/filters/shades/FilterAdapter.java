@@ -2,16 +2,15 @@ package com.filters.shades;
 
 import android.app.Activity;
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.provider.MediaStore;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,13 +18,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import com.zomato.photofilters.FilterPack;
 import com.zomato.photofilters.imageprocessors.Filter;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.filters.shades.HomepageActivity.TAG;
 
 /**
  * Created by Federica on 20/02/2018.
@@ -39,16 +33,18 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     }
 
     private List<Picture> mPictures;
+    private List<OverFilter> mFilters;
     private Context mContext;
-    private int mMode;
     private Activity mActivity;
-    private String manufacturer = Build.MANUFACTURER;
+    private ImageBitmap imageBitmap;
+    Bitmap bitmap;
 
     public FilterAdapter(PictureList mPicturePaths, Activity context, int mode) {
         mPictures = new ArrayList<>();
+        mFilters = new ArrayList<>();
         mPictures = mPicturePaths.getPictures();
         mContext = context;
-        mMode = mode;
+        int mMode = mode;
         mActivity = context;
     }
 
@@ -62,29 +58,24 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     @Override
     public void onBindViewHolder(FilterAdapter.ViewHolder holder, int position) {
-        Bitmap bitmap = null;
-        try {
-            if (mMode == 0) {
-                bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
-                if (!manufacturer.equalsIgnoreCase("samsung")) {
-                    bitmap = flipBitmapHorizontally(bitmap);
-                }
-            } else if (mMode == 1) {
-                bitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), mPictures.get(position).getPictureUri());
-            } else if (mMode == 2) {
-                bitmap = BitmapFactory.decodeFile(mPictures.get(position).getPictureUri().toString());
-                if (manufacturer.equalsIgnoreCase("samsung")) {
-                    bitmap = rotate(bitmap, 90);
-                }
-            } else {
-                DownloaderTask downloaderTask = new DownloaderTask();
-                bitmap = (Bitmap)downloaderTask.doInBackground(new Object[] {position});
-            }
-        } catch (Exception ioe) {
-            Log.d(TAG, "Cannot open file: " + ioe.getMessage());
-        }
+        imageBitmap = ImageBitmap.getInstance();
+        bitmap = imageBitmap.getBitmap();
 
         List<Filter> filters = FilterPack.getFilterPack(mContext);
+        Cursor cursor = ((HomepageActivity)mActivity).databaseConnector.getData("SELECT * FROM FILTER");
+
+        if (cursor.moveToFirst()) {
+
+            do {
+                int id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                int imgId = (int)cursor.getLong(2);
+
+                mFilters.add(new OverFilter(id, name, imgId));
+
+            } while (cursor.moveToNext());
+        }
+
 
         if (bitmap.getWidth() >= bitmap.getHeight()) {
             bitmap = scaleBitmapKeepingRatio(bitmap, 200, 150);
@@ -92,10 +83,18 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             bitmap = scaleBitmapKeepingRatio(bitmap, 150, 200);
         }
 
-        if (position==0){
+        if (position == 0){
             holder.mFilterThumbnail.setImageBitmap(bitmap);
             holder.mText.setText(R.string.original_image);
-        }else{
+        } else if (position == 17) {
+            bitmap = returnBitmapFromDrawable(mActivity.getResources().getDrawable(mFilters.get(0).getImage()));
+            holder.mFilterThumbnail.setImageBitmap(bitmap);
+            holder.mText.setText(mFilters.get(0).getName());
+        } else if (position == 18) {
+            bitmap = returnBitmapFromDrawable(mActivity.getResources().getDrawable(mFilters.get(1).getImage()));
+            holder.mFilterThumbnail.setImageBitmap(bitmap);
+            holder.mText.setText(mFilters.get(1).getName());
+        } else{
             holder.mFilterThumbnail.setImageBitmap(filters.get(position-1).processFilter(bitmap.copy(Bitmap.Config.ARGB_8888, true)));
             holder.mText.setText(filters.get(position-1).getName());
         }
@@ -104,6 +103,12 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         holder.mFilterThumbnail.setCropToPadding(true);
         holder.mFilterThumbnail.setAdjustViewBounds(true);
         holder.mPicture = mPictures.get(position);
+
+        if (position == 17)
+            holder.mOverFilter = mFilters.get(0);
+        else if (position == 18) {
+            holder.mOverFilter = mFilters.get(1);
+        }
     }
 
     private Bitmap scaleBitmapKeepingRatio(Bitmap bitmap, int destWidth, int destHeight) {
@@ -147,6 +152,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
         public ImageView mFilterThumbnail;
         public Picture mPicture;
+        public OverFilter mOverFilter;
         private TextView mText;
 
         public ViewHolder(View itemView, Context context) {
@@ -160,44 +166,36 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
                 @Override
                 public void onClick(View v) {
 
-                    ((HomepageActivity)mActivity).setImage(mPicture.getPictureUri().toString(), mMode, getPosition());
+                    if (getPosition() == 17 || getPosition() == 18) {
+                        ((HomepageActivity)mActivity).setOverlayFilter(returnBitmapFromDrawable(mActivity.getResources().getDrawable(mOverFilter.getImage())));
+                    }else {
+                        ((HomepageActivity) mActivity).setImage(getPosition());
+                    }
                 }
             });
         }
     }
-    private Bitmap flipBitmapHorizontally(Bitmap source) {
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
 
-        Matrix matrix = new Matrix();
-        matrix.postScale(-1, 1, centerX, centerY);
+    //Create a Bitmap from Drawable
+    private Bitmap returnBitmapFromDrawable(Drawable drawable)  {
 
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    private Bitmap rotate(Bitmap source, float degrees){
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
-
-        Matrix matrix = new Matrix();
-        matrix.postRotate((float) degrees, centerX, centerY);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    private class DownloaderTask extends AsyncTask {
-
-        @Override
-        protected Object doInBackground(Object[] params) {
-            Bitmap bitmap = null;
-            try {
-                URL url = new URL(mPictures.get((int) params[0]).getPictureUri().toString());
-                bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-            } catch (MalformedURLException me) {
-                Log.e(TAG, "Malformed URL exception: " + me.getMessage());
-            } catch (IOException ioe) {
-                Log.e(TAG, "IOException: " + ioe.getMessage());
-            }
-            return bitmap;
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
         }
+
+        final int width = !drawable.getBounds().isEmpty() ? drawable
+                .getBounds().width() : drawable.getIntrinsicWidth();
+
+        final int height = !drawable.getBounds().isEmpty() ? drawable
+                .getBounds().height() : drawable.getIntrinsicHeight();
+
+        final Bitmap bitmap = Bitmap.createBitmap(width <= 0 ? 1 : width,
+                height <= 0 ? 1 : height, Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
     }
 }
