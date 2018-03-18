@@ -38,4 +38,5 @@ dependencies {
     compile files('libs/glide-3.6.0.jar')
     implementation 'info.androidhive:imagefilters:1.0.7'
     compile 'com.facebook.android:facebook-share:[4,5)'
+    compile 'com.google.android.gms:play-services-vision:9.8.0'
 }

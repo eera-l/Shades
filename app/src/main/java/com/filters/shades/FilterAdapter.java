@@ -64,8 +64,8 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         List<Filter> filters = FilterPack.getFilterPack(mContext);
         Cursor cursor = ((HomepageActivity)mActivity).databaseConnector.getData("SELECT * FROM FILTER");
 
-        if (cursor.moveToFirst()) {
-
+        if (cursor.moveToFirst() && position > 16) {
+            mFilters.clear();
             do {
                 int id = cursor.getInt(0);
                 String name = cursor.getString(1);
@@ -87,15 +87,11 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         if (position == 0){
             holder.mFilterThumbnail.setImageBitmap(bitmap);
             holder.mText.setText(R.string.original_image);
-        } else if (position == 17) {
-            bitmap = returnBitmapFromDrawable(mActivity.getResources().getDrawable(mFilters.get(0).getImage()));
+        } else if (position >= 17) {
+            bitmap = returnBitmapFromDrawable(mActivity.getResources().getDrawable(mFilters.get(position - 17).getImage()));
             holder.mFilterThumbnail.setImageBitmap(bitmap);
-            holder.mText.setText(mFilters.get(0).getName());
-        } else if (position == 18) {
-            bitmap = returnBitmapFromDrawable(mActivity.getResources().getDrawable(mFilters.get(1).getImage()));
-            holder.mFilterThumbnail.setImageBitmap(bitmap);
-            holder.mText.setText(mFilters.get(1).getName());
-        } else{
+            holder.mText.setText(mFilters.get(position - 17).getName());
+        } else {
             holder.mFilterThumbnail.setImageBitmap(filters.get(position-1).processFilter(bitmap.copy(Bitmap.Config.ARGB_8888, true)));
             holder.mText.setText(filters.get(position-1).getName());
         }
@@ -105,10 +101,8 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         holder.mFilterThumbnail.setAdjustViewBounds(true);
         holder.mPicture = mPictures.get(position);
 
-        if (position == 17)
-            holder.mOverFilter = mFilters.get(0);
-        else if (position == 18) {
-            holder.mOverFilter = mFilters.get(1);
+        if (position >= 17) {
+            holder.mOverFilter = mFilters.get(position - 17);
         }
     }
 
@@ -167,8 +161,8 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
                 @Override
                 public void onClick(View v) {
 
-                    if (getPosition() == 17 || getPosition() == 18) {
-                        ((HomepageActivity)mActivity).setOverlayFilter(returnBitmapFromDrawable(mActivity.getResources().getDrawable(mOverFilter.getImage())));
+                    if (getPosition()>= 17) {
+                        ((HomepageActivity)mActivity).setOverlayFilter(returnBitmapFromDrawable(mActivity.getResources().getDrawable(mOverFilter.getImage())), getPosition());
                     }else {
                         ((HomepageActivity) mActivity).setImage(getPosition());
                     }

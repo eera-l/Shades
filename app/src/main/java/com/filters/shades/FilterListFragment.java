@@ -53,7 +53,7 @@ public class FilterListFragment extends Fragment {
         protected Object doInBackground(Object[] params) {
             mPicturePaths = new PictureList();
             List<Picture> pictures = new ArrayList<>();
-            for (int i = 0; i < 19; i++) {
+            for (int i = 0; i < 21; i++) {
                 pictures.add(mPicture);
             }
             mPicturePaths.setmPictures(pictures);

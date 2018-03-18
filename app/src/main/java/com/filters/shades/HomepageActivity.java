@@ -6,7 +6,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.PointF;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -15,7 +20,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.util.Log;
-import android.media.FaceDetector;
+import android.util.SparseArray;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -25,6 +30,9 @@ import com.facebook.FacebookSdk;
 import com.facebook.share.model.SharePhoto;
 import com.facebook.share.model.SharePhotoContent;
 import com.facebook.share.widget.ShareButton;
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
 import com.zomato.photofilters.FilterPack;
 import com.zomato.photofilters.imageprocessors.Filter;
 import com.zomato.photofilters.imageprocessors.subfilters.BrightnessSubFilter;
@@ -44,6 +52,7 @@ public class HomepageActivity extends AppCompatActivity{
     public ImageView mPictureView;
     private ImageView mOverlayFilterView;
     private Bitmap tempBitmap;
+    private Bitmap placeHolderBitmap = null;
 
     // modified image values
     int brightnessFinal = 0;
@@ -58,6 +67,7 @@ public class HomepageActivity extends AppCompatActivity{
     private ImageBitmap imageBitmap;
     private Bitmap finalBitmap;
     public static DatabaseConnector databaseConnector;
+    private int tempPosition = 555;
 
     public static Intent newIntent(Context packageContext, String picturePath) {
         Intent intent = new Intent(packageContext, HomepageActivity.class);
@@ -68,6 +78,10 @@ public class HomepageActivity extends AppCompatActivity{
         imageBitmap = ImageBitmap.getInstance();
         finalBitmap = imageBitmap.getBitmap();
 
+        if (mOverlayFilterView.getDrawable() != null) {
+            mOverlayFilterView.setImageDrawable(null);
+        }
+
         if (position!=0){
             List<Filter> filters = FilterPack.getFilterPack(getBaseContext());
             finalBitmap = filters.get(position-1).processFilter(finalBitmap.copy(Bitmap.Config.ARGB_8888, true));
@@ -75,30 +89,31 @@ public class HomepageActivity extends AppCompatActivity{
         }else {
             mPictureView.setImageBitmap(finalBitmap);
         }
+        tempBitmap = finalBitmap;
+
+        if (placeHolderBitmap != null) {
+            finalBitmap = detectFace(placeHolderBitmap);
+        }
 
         publishToFaceBook(finalBitmap);
-        tempBitmap = finalBitmap;
+
     }
 
-    public void setOverlayFilter(Bitmap bitmap) {
-        imageBitmap = ImageBitmap.getInstance();
-        finalBitmap = imageBitmap.getBitmap();
+    public void setOverlayFilter(Bitmap bitmap, int position) {
 
-        if (mOverlayFilterView.getDrawable() == null) {
-            Bitmap result = Bitmap.createBitmap(finalBitmap.getWidth(), finalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(result);
-            canvas.drawBitmap(finalBitmap, 0f, 0f, null);
-            canvas.drawBitmap(bitmap, mOverlayFilterView.getX(), mOverlayFilterView.getY(), null);
-            finalBitmap = result;
+        if (mOverlayFilterView.getDrawable() == null || position != tempPosition) {
+            placeHolderBitmap = bitmap;
+            tempPosition = position;
+            finalBitmap = tempBitmap;
+            finalBitmap = detectFace(bitmap);
             publishToFaceBook(finalBitmap);
-            mOverlayFilterView.setImageBitmap(finalBitmap);
-        }
-        else {
+        } else {
             mOverlayFilterView.setImageDrawable(null);
             finalBitmap = tempBitmap;
+            placeHolderBitmap = null;
         }
-
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -215,13 +230,13 @@ public class HomepageActivity extends AppCompatActivity{
         connectDatabase();
     }
 
-    private Bitmap rotate(Bitmap source, float degrees){
+    /*private Bitmap rotate(Bitmap source, float degrees){
         float centerX = source.getWidth() / 2;
         float centerY = source.getHeight() / 2;
         Matrix matrix = new Matrix();
         matrix.postRotate((float) degrees, centerX, centerY);
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
+    }*/
 
     public void publishToFaceBook(Bitmap bitmap){
         FacebookSdk.sdkInitialize(getApplicationContext());
@@ -320,18 +335,126 @@ public class HomepageActivity extends AppCompatActivity{
 
     private void connectDatabase() {
         databaseConnector = new DatabaseConnector(this, "FilterDB.sqlite", null, 1);
+        databaseConnector.queryData("DROP TABLE FILTER");
 
-        databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (Id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, image INTEGER);");
-
-        //Bitmap bitmapFlower = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.crown_flowers));
-        //Bitmap bitmapSparkles = returnBitmapFromDrawable(getResources().getDrawable(R.drawable.sparkle));
+        databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (id INTEGER PRIMARY KEY, name VARCHAR, image INTEGER);");
 
 
         if (databaseConnector.getData("SELECT * FROM FILTER").getCount() < 2) {
-            databaseConnector.insertData("Primavera", R.drawable.crown_flowers);
-            databaseConnector.insertData("Desir", R.drawable.sparkle);
-            System.out.println(databaseConnector.getData("SELECT * FROM FILTER;").getCount());
-            System.out.println("---------------------------------------------------------------------");
+            databaseConnector.insertData(578,"Primavera", R.drawable.crown_flowers);
+            databaseConnector.insertData(579,"Fleur de lis", R.drawable.blue_flowers);
+            databaseConnector.insertData(580, "Lynx", R.drawable.puma);
+            databaseConnector.insertData(581, "Tokki", R.drawable.bunny_);
         }
     }
+
+    private Bitmap detectFace(Bitmap filter) {
+
+        Paint rectPaint = new Paint();
+        rectPaint.setStrokeWidth(5);
+        rectPaint.setColor(Color.RED);
+        rectPaint.setStyle(Paint.Style.STROKE);
+
+        Bitmap faceBitmap = Bitmap.createBitmap(finalBitmap.getWidth(), finalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(faceBitmap);
+        canvas.drawBitmap(finalBitmap, 0, 0, null);
+
+        RecognizerTask task = new RecognizerTask(this);
+        SparseArray<Face> faceSparseArray = task.doInBackground(finalBitmap);
+
+
+        if (faceSparseArray.size() == 0) {
+            Toast.makeText(this, "The app could not detect any faces in the picture.", Toast.LENGTH_SHORT).show();
+        } else {
+            RectF rectF = null;
+
+            for (int i = 0; i < faceSparseArray.size(); i++) {
+
+                Face face = faceSparseArray.valueAt(i);
+                float x1 = face.getPosition().x;
+                float y1 = face.getPosition().y;
+
+                float x2 = x1 + face.getWidth();
+                float y2 = y1 + face.getHeight();
+
+                rectF = new RectF(x1, y1, x2, y2);
+
+                //canvas.drawRoundRect(rectF, 0, 0, rectPaint);
+
+                if (tempPosition == 17 || tempPosition == 18) {
+                    filter = resizeBitmap(filter, (int) rectF.width(), (int) rectF.height());
+                    canvas.drawBitmap(filter, x1, rectF.top - ((rectF.height() * 30) / 100), null);
+                } else if (tempPosition == 19) {
+                    filter = resizeBitmap(filter, (int) (rectF.width() + ((rectF.width() * 20) / 100)), (int) (rectF.height() + ((rectF.height() * 20) / 100)));
+                    canvas.drawBitmap(filter, (x1 - (rectF.width() * 10 / 100)), (rectF.top - (rectF.height() * 10 / 100)), null);
+                } else if (tempPosition == 20) {
+                    filter = resizeBitmap(filter, (int) (rectF.width() + ((rectF.width() * 30) / 100)), (int) (rectF.height() + ((rectF.height() * 30) / 100)));
+                    canvas.drawBitmap(filter, (x1 - (rectF.width() * 15 / 100)), (rectF.top - (rectF.height() * 35 / 100)), null);
+                }
+                mOverlayFilterView.setImageDrawable(new BitmapDrawable(getResources(), faceBitmap));
+            }
+        }
+        return faceBitmap;
+    }
+
+    private Bitmap resizeBitmap(Bitmap source, int newWidth, int newHeight) {
+
+        Bitmap resizedBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888);
+        float originalWidth = source.getWidth();
+        float originalHeight = source.getHeight();
+        Canvas canvas = new Canvas(resizedBitmap);
+
+        //Values (150 and 180) that can be tweaked to adjust padding
+        //and zooming of picture thumbnails
+        float scaleX = (float) newWidth / originalWidth;
+        float scaleY = (float) newHeight / originalHeight;
+
+        float xTranslation = 0.0f;
+        float yTranslation = 0.0f;
+        float scale;
+
+        if (scaleX < scaleY) { // Scale on X, translate on Y
+            scale = scaleX;
+            yTranslation = (newHeight - originalHeight * scale) / 2.0f;
+        } else { // Scale on Y, translate on X
+            scale = scaleY;
+            xTranslation = (newWidth - originalWidth * scale) / 2.0f;
+        }
+
+        Matrix transformation = new Matrix();
+        transformation.postTranslate(xTranslation, yTranslation);
+        transformation.preScale(scale, scale);
+        Paint paint = new Paint();
+        paint.setFilterBitmap(true);
+        canvas.drawBitmap(source, transformation, paint);
+        return resizedBitmap;
+    }
+
+    private static class RecognizerTask extends AsyncTask<Bitmap, Void, SparseArray<Face>> {
+        Context mContext;
+
+        public RecognizerTask(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        protected SparseArray<Face> doInBackground(Bitmap... objects) {
+            FaceDetector faceDetector = new FaceDetector.Builder(mContext)
+                    .setTrackingEnabled(false)
+                    .setLandmarkType(FaceDetector.ALL_LANDMARKS)
+                    .setMode(FaceDetector.ACCURATE_MODE)
+                    .build();
+
+            if (!faceDetector.isOperational()) {
+
+                Toast.makeText(mContext, "Face detector could not be started. Make sure to install Google Play Store on your device.", Toast.LENGTH_LONG).show();
+            }
+
+            Frame frame = new Frame.Builder().setBitmap(objects[0]).build();
+            SparseArray<Face> faceSparseArray = faceDetector.detect(frame);
+
+            return faceSparseArray;
+        }
+    }
+
 }
