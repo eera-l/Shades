@@ -9,7 +9,9 @@
     <FrameLayout
         android:id="@+id/camera_preview"
         android:layout_width="360dp"
-        android:layout_height="464dp" >
+        android:layout_height="464dp"
+        android:layout_gravity="center"
+        android:paddingBottom="1dp">
 
     </FrameLayout>
 

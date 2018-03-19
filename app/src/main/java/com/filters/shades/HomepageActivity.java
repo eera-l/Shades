@@ -77,8 +77,6 @@ public class HomepageActivity extends AppCompatActivity{
         return intent;
     }
     public void setImage(int position) {
-        imageBitmap = ImageBitmap.getInstance();
-        finalBitmap = imageBitmap.getBitmap();
 
         if (mOverlayFilterView.getDrawable() != null) {
             mOverlayFilterView.setImageDrawable(null);
@@ -231,14 +229,6 @@ public class HomepageActivity extends AppCompatActivity{
 
         connectDatabase();
     }
-
-    /*private Bitmap rotate(Bitmap source, float degrees){
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
-        Matrix matrix = new Matrix();
-        matrix.postRotate((float) degrees, centerX, centerY);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }*/
 
     public void publishToFaceBook(Bitmap bitmap){
         FacebookSdk.sdkInitialize(getApplicationContext());

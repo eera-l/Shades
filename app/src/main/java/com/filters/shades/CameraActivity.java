@@ -15,9 +15,12 @@ import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
@@ -118,8 +121,14 @@ public class CameraActivity extends Activity {
         // Create our Preview view and set it as the content of our activity.
         CameraPreview mPreview = new CameraPreview(this, mCamera);
         FrameLayout preview = findViewById(R.id.camera_preview);
+
         preview.addView(mPreview);
 
+        if (manufacturer.equalsIgnoreCase("samsung")){
+            LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(850,1500);
+            layout.gravity = Gravity.CENTER;
+            preview.setLayoutParams(layout);
+        }
         Button mButtonCapture = findViewById(R.id.button_capture);
         mButtonCapture.setOnClickListener(new View.OnClickListener() {
 
