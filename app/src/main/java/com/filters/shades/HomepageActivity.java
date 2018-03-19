@@ -360,7 +360,6 @@ public class HomepageActivity extends AppCompatActivity{
 
     private void connectDatabase() {
         databaseConnector = new DatabaseConnector(this, "FilterDB.sqlite", null, 1);
-        databaseConnector.queryData("DROP TABLE FILTER");
 
         databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (id INTEGER PRIMARY KEY, name VARCHAR, image INTEGER);");
 
