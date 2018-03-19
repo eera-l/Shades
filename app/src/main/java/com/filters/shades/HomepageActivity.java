@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.os.Build;
 import android.os.Environment;
@@ -213,14 +214,6 @@ public class HomepageActivity extends AppCompatActivity{
         publishToFaceBook(finalBitmap);
 
         connectDatabase();
-    }
-
-    private Bitmap rotate(Bitmap source, float degrees){
-        float centerX = source.getWidth() / 2;
-        float centerY = source.getHeight() / 2;
-        Matrix matrix = new Matrix();
-        matrix.postRotate((float) degrees, centerX, centerY);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
     public void publishToFaceBook(Bitmap bitmap){
