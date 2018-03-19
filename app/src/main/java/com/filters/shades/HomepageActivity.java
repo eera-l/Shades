@@ -78,6 +78,9 @@ public class HomepageActivity extends AppCompatActivity{
     }
     public void setImage(int position) {
 
+        ImageBitmap imageBitmap = ImageBitmap.getInstance();
+        finalBitmap = imageBitmap.getBitmap();
+
         if (mOverlayFilterView.getDrawable() != null) {
             mOverlayFilterView.setImageDrawable(null);
         }
@@ -250,7 +253,7 @@ public class HomepageActivity extends AppCompatActivity{
             mOverlayFilterView.setImageDrawable(null);
         }
         finalBitmap = myFilter.processFilter(tempBitmap.copy(Bitmap.Config.ARGB_8888, true));
-        tempBitmap = finalBitmap;
+       // tempBitmap = finalBitmap;
         mPictureView.setImageBitmap(finalBitmap);
 
         if (placeHolderBitmap != null) {
