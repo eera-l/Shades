@@ -216,6 +216,7 @@ public class CameraActivity extends Activity {
                 .into(new SimpleTarget<Bitmap>(800,800) {
                     @Override
                     public void onResourceReady(Bitmap resource, GlideAnimation glideAnimation) {
+                        imageBitmap.setBitmap(resource);
                         //Get folder on phone's storage
                         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Shades");
 
