@@ -75,8 +75,6 @@ public class HomepageActivity extends AppCompatActivity{
         return intent;
     }
     public void setImage(int position) {
-        imageBitmap = ImageBitmap.getInstance();
-        finalBitmap = imageBitmap.getBitmap();
 
         if (mOverlayFilterView.getDrawable() != null) {
             mOverlayFilterView.setImageDrawable(null);
