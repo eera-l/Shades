@@ -47,6 +47,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("deprecation")
 public class HomepageActivity extends AppCompatActivity{
 
     public ImageView mPictureView;
@@ -68,6 +69,7 @@ public class HomepageActivity extends AppCompatActivity{
     private Bitmap finalBitmap;
     public static DatabaseConnector databaseConnector;
     private int tempPosition = 555;
+    private Bitmap originalBitmap;
 
     public static Intent newIntent(Context packageContext, String picturePath) {
         Intent intent = new Intent(packageContext, HomepageActivity.class);
@@ -96,7 +98,6 @@ public class HomepageActivity extends AppCompatActivity{
         }
 
         publishToFaceBook(finalBitmap);
-
     }
 
     public void setOverlayFilter(Bitmap bitmap, int position) {
@@ -126,6 +127,7 @@ public class HomepageActivity extends AppCompatActivity{
         mOverlayFilterView = (ImageView)findViewById(R.id.image_view_overlay_filters);
         imageBitmap = ImageBitmap.getInstance();
         finalBitmap = imageBitmap.getBitmap();
+        originalBitmap = imageBitmap.getBitmap();
 
         int position = getIntent().getIntExtra(EXTRA_POSITION, 0);
 
@@ -253,24 +255,57 @@ public class HomepageActivity extends AppCompatActivity{
         brightnessFinal = brightness;
         Filter myFilter = new Filter();
         myFilter.addSubFilter(new BrightnessSubFilter(brightness));
-        finalBitmap = myFilter.processFilter(finalBitmap.copy(Bitmap.Config.ARGB_8888, true));
+
+        if (mOverlayFilterView.getDrawable() != null) {
+            mOverlayFilterView.setImageDrawable(null);
+        }
+        finalBitmap = myFilter.processFilter(tempBitmap.copy(Bitmap.Config.ARGB_8888, true));
+        tempBitmap = finalBitmap;
         mPictureView.setImageBitmap(finalBitmap);
+
+        if (placeHolderBitmap != null) {
+            finalBitmap = detectFace(placeHolderBitmap);
+        }
+
+        publishToFaceBook(finalBitmap);
     }
 
     public void onSaturationChanged(final float saturation) {
         saturationFinal = saturation;
         Filter myFilter = new Filter();
         myFilter.addSubFilter(new SaturationSubfilter(saturation));
-        finalBitmap = myFilter.processFilter(finalBitmap.copy(Bitmap.Config.ARGB_8888, true));
+
+        if (mOverlayFilterView.getDrawable() != null) {
+            mOverlayFilterView.setImageDrawable(null);
+        }
+        finalBitmap = myFilter.processFilter(tempBitmap.copy(Bitmap.Config.ARGB_8888, true));
+        tempBitmap = finalBitmap;
         mPictureView.setImageBitmap(finalBitmap);
+
+        if (placeHolderBitmap != null) {
+            finalBitmap = detectFace(placeHolderBitmap);
+        }
+
+        publishToFaceBook(finalBitmap);
     }
 
     public void onContrastChanged(final float contrast) {
         contrastFinal = contrast;
         Filter myFilter = new Filter();
         myFilter.addSubFilter(new ContrastSubFilter(contrast));
-        finalBitmap = myFilter.processFilter(finalBitmap.copy(Bitmap.Config.ARGB_8888, true));
+
+        if (mOverlayFilterView.getDrawable() != null) {
+            mOverlayFilterView.setImageDrawable(null);
+        }
+        finalBitmap = myFilter.processFilter(tempBitmap.copy(Bitmap.Config.ARGB_8888, true));
+        tempBitmap = finalBitmap;
         mPictureView.setImageBitmap(finalBitmap);
+
+        if (placeHolderBitmap != null) {
+            finalBitmap = detectFace(placeHolderBitmap);
+        }
+
+        publishToFaceBook(finalBitmap);
     }
 
     public void onEditCompleted() {
@@ -355,12 +390,12 @@ public class HomepageActivity extends AppCompatActivity{
         rectPaint.setColor(Color.RED);
         rectPaint.setStyle(Paint.Style.STROKE);
 
-        Bitmap faceBitmap = Bitmap.createBitmap(finalBitmap.getWidth(), finalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap faceBitmap = Bitmap.createBitmap(originalBitmap.getWidth(), originalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(faceBitmap);
         canvas.drawBitmap(finalBitmap, 0, 0, null);
 
         RecognizerTask task = new RecognizerTask(this);
-        SparseArray<Face> faceSparseArray = task.doInBackground(finalBitmap);
+        SparseArray<Face> faceSparseArray = task.doInBackground(originalBitmap);
 
 
         if (faceSparseArray.size() == 0) {
