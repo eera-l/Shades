@@ -14,6 +14,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -124,11 +125,30 @@ public class CameraActivity extends Activity {
 
         preview.addView(mPreview);
 
-        if (manufacturer.equalsIgnoreCase("samsung")){
+
+
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        float ratio = ((float)metrics.heightPixels / (float)metrics.widthPixels); //mine is 1280x720
+        //tablet is 1200x1848 (ratio 1.54)
+        if (ratio >= 1.78) { //more than 16:9
             LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(850,1500);
             layout.gravity = Gravity.CENTER;
             preview.setLayoutParams(layout);
+        } else if (ratio < 1.78 && ratio > 1.55) { //between 16:9 and 4:3 720x928
+            LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(metrics.widthPixels, (int)((float)metrics.widthPixels * 1.28888888));
+            layout.gravity = Gravity.CENTER;
+            preview.setLayoutParams(layout);
+        } else { //4:3
+            LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(metrics.widthPixels,(int)((float)metrics.widthPixels * 1.2833333));
+            layout.gravity = Gravity.CENTER;
+            preview.setLayoutParams(layout);
         }
+
+        /*if (manufacturer.equalsIgnoreCase("samsung")){
+            LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(850,1500);
+            layout.gravity = Gravity.CENTER;
+            preview.setLayoutParams(layout);
+        }*/
         Button mButtonCapture = findViewById(R.id.button_capture);
         mButtonCapture.setOnClickListener(new View.OnClickListener() {
 

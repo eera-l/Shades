@@ -77,6 +77,8 @@ public class HomepageActivity extends AppCompatActivity{
         return intent;
     }
     public void setImage(int position) {
+        ImageBitmap imageBitmap = ImageBitmap.getInstance();
+        finalBitmap = imageBitmap.getBitmap();
 
         ImageBitmap imageBitmap = ImageBitmap.getInstance();
         finalBitmap = imageBitmap.getBitmap();
@@ -364,6 +366,8 @@ public class HomepageActivity extends AppCompatActivity{
     private void connectDatabase() {
         databaseConnector = new DatabaseConnector(this, "FilterDB.sqlite", null, 1);
 
+        databaseConnector.queryData("DROP TABLE FILTER");
+
         databaseConnector.queryData("CREATE TABLE IF NOT EXISTS FILTER (id INTEGER PRIMARY KEY, name VARCHAR, image INTEGER);");
 
 
@@ -371,8 +375,10 @@ public class HomepageActivity extends AppCompatActivity{
             databaseConnector.insertData(578,"Primavera", R.drawable.crown_flowers);
             databaseConnector.insertData(579,"Fleur de lis", R.drawable.blue_flowers);
             databaseConnector.insertData(580, "Lynx", R.drawable.puma);
-            databaseConnector.insertData(581, "Tokki", R.drawable.bunny_);
+            databaseConnector.insertData(581, "Bunnilator", R.drawable.bunny_);
+            databaseConnector.insertData(582, "Darling", R.drawable.hearts_);
         }
+        databaseConnector.close();
     }
 
     private Bitmap detectFace(Bitmap filter) {
@@ -412,11 +418,14 @@ public class HomepageActivity extends AppCompatActivity{
                     filter = resizeBitmap(filter, (int) rectF.width(), (int) rectF.height());
                     canvas.drawBitmap(filter, x1, rectF.top - ((rectF.height() * 30) / 100), null);
                 } else if (tempPosition == 19) {
-                    filter = resizeBitmap(filter, (int) (rectF.width() + ((rectF.width() * 20) / 100)), (int) (rectF.height() + ((rectF.height() * 20) / 100)));
+                    filter = resizeBitmap(filter, (int) (rectF.width() + ((rectF.width() * 23) / 100)), (int) (rectF.height() + ((rectF.height() * 23) / 100)));
                     canvas.drawBitmap(filter, (x1 - (rectF.width() * 10 / 100)), (rectF.top - (rectF.height() * 10 / 100)), null);
                 } else if (tempPosition == 20) {
-                    filter = resizeBitmap(filter, (int) (rectF.width() + ((rectF.width() * 30) / 100)), (int) (rectF.height() + ((rectF.height() * 30) / 100)));
-                    canvas.drawBitmap(filter, (x1 - (rectF.width() * 15 / 100)), (rectF.top - (rectF.height() * 35 / 100)), null);
+                    filter = resizeBitmap(filter, (int) (rectF.width() + ((rectF.width() * 35) / 100)), (int) (rectF.height() + ((rectF.height() * 35) / 100)));
+                    canvas.drawBitmap(filter, (x1 - (rectF.width() * 17 / 100)), (rectF.top - (rectF.height() * 35 / 100)), null);
+                } else if (tempPosition == 21) {
+                    filter = resizeBitmap(filter, (int) (rectF.width() + ((rectF.width() * 17) / 100)), (int) (rectF.height() + ((rectF.height() * 17) / 100)));
+                    canvas.drawBitmap(filter, (x1 - (rectF.width() * 8 / 100)), rectF.top - ((rectF.height() * 2) / 100), null);
                 }
                 mOverlayFilterView.setImageDrawable(new BitmapDrawable(getResources(), faceBitmap));
             }
@@ -479,6 +488,7 @@ public class HomepageActivity extends AppCompatActivity{
 
             Frame frame = new Frame.Builder().setBitmap(objects[0]).build();
             SparseArray<Face> faceSparseArray = faceDetector.detect(frame);
+            faceDetector.release();
 
             return faceSparseArray;
         }
