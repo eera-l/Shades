@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -125,8 +126,6 @@ public class CameraActivity extends Activity {
 
         preview.addView(mPreview);
 
-
-
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         float ratio = ((float)metrics.heightPixels / (float)metrics.widthPixels); //mine is 1280x720
         //tablet is 1200x1848 (ratio 1.54)
@@ -144,11 +143,6 @@ public class CameraActivity extends Activity {
             preview.setLayoutParams(layout);
         }
 
-        /*if (manufacturer.equalsIgnoreCase("samsung")){
-            LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(850,1500);
-            layout.gravity = Gravity.CENTER;
-            preview.setLayoutParams(layout);
-        }*/
         Button mButtonCapture = findViewById(R.id.button_capture);
         mButtonCapture.setOnClickListener(new View.OnClickListener() {
 
@@ -215,6 +209,7 @@ public class CameraActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        InputStream in;
 
         if (requestCode == GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
             Uri pictureFile = data.getData();
@@ -223,15 +218,28 @@ public class CameraActivity extends Activity {
 
             try {
                 bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+                if (manufacturer.equalsIgnoreCase("samsung")) {
+                    in = getContentResolver().openInputStream(selectedImage);
+                    ExifInterface exif = null;
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                        exif = new ExifInterface(in);
+                    }
+                    if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("6")){
+                        bitmap = imageBitmap.rotate(bitmap, 90);
+                    } else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("8")){
+                        bitmap = imageBitmap.rotate(bitmap, 270);
+                    } else if(exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("3")){
+                        bitmap = imageBitmap.rotate(bitmap, 180);
+                    } else if (exif.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase("0")) {
+                        bitmap = imageBitmap.rotate(bitmap, 90);
+                        bitmap = imageBitmap.flipBitmapVertically(bitmap);
+                    }
+                }
+                imageBitmap.setBitmap(bitmap);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            if (manufacturer.equalsIgnoreCase("samsung")){
-                imageBitmap.rotate(bitmap,90);
-            }else {
-                imageBitmap.setBitmap(bitmap);
-            }
             Intent intent = HomepageActivity.newIntent(CameraActivity.this, pictureToShowPath);
             startActivity(intent);
         }

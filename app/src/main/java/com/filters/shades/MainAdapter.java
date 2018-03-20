@@ -6,18 +6,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-
 import com.bumptech.glide.Glide;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.filters.shades.HomepageActivity.TAG;
 
 /**
  * Created by Federica on 19/02/2018.
@@ -69,7 +64,7 @@ class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         private Context mContext;
 
 
-        public ViewHolder(View itemView, Context context) {
+        public ViewHolder(View itemView, final Context context) {
             super(itemView);
             mContext = context;
             mImageView = itemView.findViewById(R.id.picture_thumbnail);
