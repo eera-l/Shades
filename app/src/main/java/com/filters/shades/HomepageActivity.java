@@ -80,9 +80,6 @@ public class HomepageActivity extends AppCompatActivity{
         ImageBitmap imageBitmap = ImageBitmap.getInstance();
         finalBitmap = imageBitmap.getBitmap();
 
-        ImageBitmap imageBitmap = ImageBitmap.getInstance();
-        finalBitmap = imageBitmap.getBitmap();
-
         if (mOverlayFilterView.getDrawable() != null) {
             mOverlayFilterView.setImageDrawable(null);
         }
