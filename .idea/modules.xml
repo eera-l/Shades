@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Shades.iml" filepath="$PROJECT_DIR$/Shades.iml" />
       <module fileurl="file://C:\Users\EerAmore\Desktop\Shades\Shades.iml" filepath="C:\Users\EerAmore\Desktop\Shades\Shades.iml" />
       <module fileurl="file://C:\Users\EerAmore\Documents\HKR\Development for Mobile Platforms\Project\Shades-felicity_local\Shades.iml" filepath="C:\Users\EerAmore\Documents\HKR\Development for Mobile Platforms\Project\Shades-felicity_local\Shades.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Shades-felicity_local.iml" filepath="$PROJECT_DIR$/Shades-felicity_local.iml" />
       <module fileurl="file://C:\Users\felic\Documents\Dev. Mobile Platforms\Shades\Shades-felicity_local.iml" filepath="C:\Users\felic\Documents\Dev. Mobile Platforms\Shades\Shades-felicity_local.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>

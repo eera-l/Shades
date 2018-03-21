@@ -69,4 +69,16 @@ public class ImageBitmap {
         bitmap = Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
         return bitmap;
     }
+
+    public Bitmap flipBitmapHorizontally(Bitmap source) {
+
+        float centerX = source.getWidth() / 2;
+        float centerY = source.getHeight() / 2;
+
+        Matrix matrix = new Matrix();
+        matrix.postScale(-1, 1, centerX, centerY);
+
+        bitmap = Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+        return bitmap;
+    }
 }

@@ -74,6 +74,7 @@ public class CameraActivity extends Activity {
                         bitmap = imageBitmap.flipBitmapVertically(bitmap);
                     }
                 }
+                bitmap = imageBitmap.flipBitmapHorizontally(bitmap);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
                 fileOutputStream.close();
 
