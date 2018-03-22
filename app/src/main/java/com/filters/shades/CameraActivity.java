@@ -74,8 +74,9 @@ public class CameraActivity extends Activity {
                         bitmap = imageBitmap.rotate(bitmap, 90);
                         bitmap = imageBitmap.flipBitmapVertically(bitmap);
                     }
+                }else {
+                    bitmap = imageBitmap.flipBitmapHorizontally(bitmap);
                 }
-                bitmap = imageBitmap.flipBitmapHorizontally(bitmap);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
                 fileOutputStream.close();
 
